@@ -4,9 +4,9 @@ Read the documents in order. Each one builds on the one before it.
 
 | # | Document | What it covers | Status |
 |---|---|---|---|
-| 1 | [PRD.md](PRD.md) ([Arabic](PRD.ar.md)) | Product goals, users, MVP scope, features (F-), rules (BR-), requirements (FR-, NFR-) | Draft v1.0, 2026-10-15 |
-| 2 | [user-flow.md](user-flow.md) ([Arabic](user-flow.ar.md)) | MVP user journeys as Mermaid flowcharts (UF-) | 2026-10-22 |
-| 3 | [UI_UX_REQUIREMENTS.md](UI_UX_REQUIREMENTS.md) | Information architecture, layout, states, accessibility, visual identity | Draft 1.0, 2026-10-24 |
+| 1 | [PRD.md](PRD.md) ([Arabic](PRD.ar.md)) | Product goals, users, MVP scope, features (F-), rules (BR-), requirements (FR-, NFR-) | Draft v1.1, 2026-10-27 (review findings applied) |
+| 2 | [user-flow.md](user-flow.md) ([Arabic](user-flow.ar.md)) | MVP user journeys as Mermaid flowcharts (UF-) | Updated 2026-10-27 for PRD v1.1 |
+| 3 | [UI_UX_REQUIREMENTS.md](UI_UX_REQUIREMENTS.md) | Information architecture, layout, states, accessibility, visual identity | Draft 1.1, 2026-10-27 |
 
 PDF exports of the PRD: [English](PRD-Iltiam-en.pdf) · [Arabic](PRD-Iltiam-ar.pdf).
 The Markdown files are the source of truth. Regenerate the PDFs after

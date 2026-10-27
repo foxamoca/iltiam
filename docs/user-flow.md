@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Source | [PRD.md](PRD.md) — Draft v1.0 (2026-10-15) |
-| Date | 2026-10-22 |
+| Source | [PRD.md](PRD.md) — Draft v1.1 (2026-10-27) |
+| Date | 2026-10-22 · updated 2026-10-27 for PRD v1.1 |
 | Scope | Confirmed MVP journeys only (PRD §9.1 and §13) |
 | Format | Mermaid `flowchart TD` |
 | Arabic version | [user-flow.ar.md](user-flow.ar.md) |
@@ -11,8 +11,9 @@
 ## How to read this document
 
 - Each diagram covers one journey and is followed by an **explanation**, the **related PRD requirements**, and its own **open questions**.
-- No business rule was added beyond the PRD. Steps based on a PRD **assumption [A]** are tagged `[A]` in the diagram, and steps that depend on an **open question** carry its number (e.g. `Q-03`).
+- No business rule was added beyond the PRD. Steps based on a PRD **assumption [A]** are tagged `[A]` in the diagram, and steps that depend on an **open question** carry its number (e.g. `Q-04`).
 - Screen (`S-xx`), error (`ERR-xx`), and edge-case (`EC-xx`) IDs are taken from the PRD as-is.
+- Rules added in PRD v1.1 (delegated by the owner, tagged **[D]** in the PRD) are drawn like confirmed rules; their IDs are cited so they can be traced (e.g. `BR-048`).
 
 ### Legend
 
@@ -33,7 +34,7 @@
 | UF-0 | Role-based navigation | All | §14, §15 |
 | UF-A | Sign-up, login & family members | Guest, Patient | F-03, F-04 |
 | UF-1 | Async message consultation | Patient, Doctor | F-05 |
-| UF-2 | Booked live text consultation | Patient, Doctor | F-06 |
+| UF-2 | Booked live text consultation (Should Have) | Patient, Doctor | F-06 |
 | UF-3 | In-person appointment | Patient, Doctor, Clinic Staff | F-07 |
 | UF-B | Manual payment verification (sub-flow) | Patient, Doctor/Staff, Pharmacy | F-09 |
 | UF-C | Issuing an e-prescription | Doctor | F-10, F-11 |
@@ -41,7 +42,7 @@
 | UF-4 | Cancellation & refund | Patient, Clinic, Admin | F-15, F-08 |
 | UF-5 | Clinic & doctor onboarding, subscription | Clinic Manager, Doctor, Staff, Admin | F-01, F-08, F-17 |
 | UF-6 | Pharmacy onboarding & daily operations | Pharmacy, Admin | F-02, F-13 |
-| UF-7 | Admin console | Platform Admin | F-11, F-17, F-18 |
+| UF-7 | Admin console & reports | Platform Admin | F-11, F-17, F-18 |
 
 ---
 
@@ -66,9 +67,9 @@ flowchart TD
     ROLE -->|"Patient"| PAT["Home S-01 • Profile and family S-05<br/>My consultations and bookings S-09<br/>Saydaliyati S-11 • Notifications S-14"]
     ROLE -->|"Doctor"| DOC["Inbox S-19 • Schedule S-17<br/>Payments and refunds S-18<br/>Prescription editor S-20 • Service settings S-21"]
     ROLE -->|"Clinic Staff"| STAFF["Schedule S-17<br/>Payments and refunds S-18<br/>no medical content"]
-    ROLE -->|"Clinic Manager"| MGR["Clinic dashboard S-16<br/>Schedule S-17 [A] • Payments S-18 [A]"]
+    ROLE -->|"Clinic Manager"| MGR["Clinic dashboard S-16<br/>Schedule S-17 [A] • Payments S-18 [A]<br/>plus doctor screens if also a doctor BR-008"]
     ROLE -->|"Pharmacy"| PH["Daily inventory S-23 • Orders S-24<br/>Settings S-25"]
-    ROLE -->|"Platform Admin"| ADM["Verification queue S-26 • Catalog S-27<br/>Partners and subscriptions S-28<br/>Overdue refunds and suspensions S-29"]
+    ROLE -->|"Platform Admin"| ADM["Verification queue S-26 • Catalog S-27<br/>Partners and subscriptions S-28<br/>Overdue refunds and suspensions S-29<br/>Reports - Report Reviewer only FR-100"]
 
     PAT --> EXIT(["Log out"])
     DOC --> EXIT
@@ -87,17 +88,17 @@ flowchart TD
 - A guest can also start **partner registration** (clinic or pharmacy) through the dedicated wizard.
 - After login, each user lands on the screens their role allows, per the permissions matrix (§15):
   - **Clinic Staff** see the schedule and payments only, **never medical content** (SEC-03, FR-031).
-  - The **Admin** has no access to medical content in the MVP (FR-099 [A]).
-  - **Clinic Manager** access to the schedule and payment confirmation is an assumption [A].
+  - The **Admin** has no general access to medical content (FR-099). The only exception is a **Report Reviewer**, who sees reported messages only (FR-100).
+  - **Clinic Manager** access to the schedule and payment confirmation is an assumption [A]. A manager who is also a doctor gets the doctor screens too, and reads medical content only through the Doctor role (BR-008).
 - Notifications (S-14) are available to all logged-in roles.
 
 ### Related PRD requirements
-BR-020, FR-020, FR-023, §14 (S-01 – S-29), §15, SEC-01, SEC-03, FR-031, FR-099.
+BR-008, BR-020, FR-020, FR-023, §14 (S-01 – S-29), §15, SEC-01, SEC-03, FR-031, FR-099, FR-100.
 
 ### Open questions
-- **Q-15:** Can a Clinic Manager also be a doctor in the same account? If so, a role switch or merged menu is needed.
 - **Q-16:** Can a pharmacy have multiple staff logins? (Affects the pharmacy menu.)
-- **Q-10:** Can the Admin access medical content to resolve disputes?
+- **Q-10:** Report-only Admin access (FR-100) still needs legal confirmation.
+- Resolved in PRD v1.1: Q-15 (a Clinic Manager may also be a doctor, BR-008).
 
 ---
 
@@ -158,10 +159,10 @@ flowchart TD
 3. If the email is already registered, ERR-04 is shown and the user is sent to login or password reset.
 4. After login the user is **returned to the action they started** (FR-023, AC-08).
 5. Email verification is required before the first paid or booked service (BR-024 — assumption [A]).
-6. Every consultation, booking, and order requires selecting the **patient of record** — the account holder or a family member (BR-023, FR-018, AC-09). A new member can be added mid-flow.
+6. Every consultation, booking, and order requires selecting the **patient of record** — the account holder or a family member (BR-023, FR-018, AC-09). A new member can be added mid-flow. Removing a member archives it: it disappears from this selector, and its history is kept (FR-017, EC-46).
 
 ### Related PRD requirements
-US-02, US-03, BR-020 – BR-025, FR-014 – FR-019, FR-023, AC-08 – AC-10, EC-06, EC-07, ERR-04, ERR-05.
+US-02, US-03, BR-020 – BR-025, FR-014 – FR-019, FR-023, AC-08 – AC-10, EC-06, EC-07, EC-46, ERR-04, ERR-05.
 
 ### Open questions
 - Email verification before the first service (BR-024) and collecting a phone number (BR-025) are assumptions to validate (§26.3).
@@ -188,12 +189,14 @@ flowchart TD
 
     PAID -->|"Free"| SENT["Case sent immediately<br/>24h clock starts at send time"]
     PAID -->|"Paid"| PAY[["Manual payment verification<br/>UF-B — recipient: clinic"]]
-    PAY --> PAYOK{"Payment confirmed?"}
-    PAYOK -->|"No"| PAYFAIL(["Exit: case not delivered to doctor"])
-    PAYOK -->|"Yes"| SENT2["Case delivered to doctor<br/>24h clock starts at payment confirmation [A]"]
+    PAY --> PAYOK{"Payment outcome"}
+    PAYOK -->|"Failed: no reference in 30 min<br/>or Not found twice"| PAYFAIL(["Exit: case not delivered to doctor"])
+    PAYOK -->|"Received, or no clinic decision<br/>within 2h BR-078"| SENT2["Case delivered to doctor<br/>24h clock starts BR-042"]
 
     SENT --> WAIT["Waiting for doctor reply<br/>deadline shown to patient"]
-    SENT2 --> WAIT
+    SENT2 --> WD{"Patient withdraws before<br/>the doctor opens the case? BR-049"}
+    WD -->|"Yes"| REF
+    WD -->|"No"| WAIT
     WAIT --> REPLY{"Doctor replied within 24h?"}
     REPLY -->|"No"| EXP["Status: Expired - No response<br/>patient notified"]
     EXP --> WASPAID{"Was it paid?"}
@@ -202,8 +205,12 @@ flowchart TD
     REF --> OTHER(["Exit: patient may consult another doctor"])
 
     REPLY -->|"Yes"| OPEN["Patient notified of reply<br/>72h follow-up window starts"]
-    OPEN --> CHAT["Message exchange S-10<br/>real-time when both online"]
-    CHAT --> RX{"Doctor issues a prescription?"}
+    OPEN --> CHAT["Message exchange S-10<br/>real-time when both online<br/>remaining follow-ups shown FR-030a"]
+    CHAT --> LIM{"Patient used all 3 follow-ups? BR-048"}
+    LIM -->|"Yes"| ERR25["ERR-25 You've used your 3 follow-up messages<br/>doctor can still reply<br/>book live chat or start a new consultation"]
+    LIM -->|"No"| RX
+    ERR25 --> RX
+    RX{"Doctor issues a prescription?"}
     RX -->|"Yes"| RXF[["Issue prescription UF-C"]]
     RXF --> CHAT
     RX -->|"No"| CLOSE{"Doctor closed thread<br/>or 72h elapsed?"}
@@ -220,7 +227,7 @@ flowchart TD
     classDef pending fill:#fef9c3,stroke:#a16207,color:#713f12
     class START,ALT,PAYFAIL,OTHER,DONE entry
     class SENT,SENT2,OPEN success
-    class ERR07,ERR08,EXP,ERR09 error
+    class ERR07,ERR08,EXP,ERR09,ERR25 error
     class WAIT pending
 ```
 
@@ -228,24 +235,27 @@ flowchart TD
 
 1. **Entry:** the doctor profile. The doctor sets async mode to Free (default), Paid (own price), or Disabled (BR-040). If disabled, the patient is offered live chat, in-person, or another doctor (ERR-07).
 2. The patient logs in (or registers), selects the **patient of record**, writes the case, and attaches photos (BR-046). Photo limits are an assumption [A] (BR-047). A failed upload is cached and retried; the message isn't sent until all photos upload or the failed one is removed (EC-12).
-3. A **free message** is sent immediately and the 24h clock starts. A **paid message** goes through manual payment (UF-B) first, and the clock starts at payment confirmation (BR-042 [A]).
+3. A **free message** is sent immediately and the 24h clock starts. A **paid message** goes through manual payment (UF-B) first. The clock starts when the clinic confirms payment, or automatically if the clinic makes no decision within 2 hours (BR-042, BR-076, BR-078).
+   - Until the doctor opens a paid case, the patient may **withdraw** it with a full refund (BR-049, FR-030b).
 4. **No reply within 24h:** status becomes "Expired – No response", the patient is notified and may consult another doctor; if paid, a refund task is created for the clinic (BR-043, FR-029).
-5. **After the first reply:** the thread stays open 72h for follow-ups; the doctor may close it earlier (BR-044). Messages are real-time when both are online (BR-045).
+5. **After the first reply:** the thread stays open 72h for follow-ups; the doctor may close it earlier (BR-044). Messages are real-time when both are online (BR-045). The patient may send up to **3 follow-up messages**; the remaining count is shown, and at zero ERR-25 offers a paid live chat or a new consultation. The doctor's replies are not limited (BR-048, FR-030a, EC-47).
 6. The doctor may issue a prescription during the consultation (UF-C).
 7. After closure, input is disabled and the patient is prompted to start a new consultation (EC-11, ERR-09).
 8. **Privacy:** case text and photos are visible only to the patient and the treating doctor — not Clinic Staff, not the Admin (FR-031, SEC-01).
+9. **Reports:** the patient or the doctor can report a message. Only the reported messages are shared with a Report Reviewer, for 14 days, and every view is logged (FR-100, SEC-13). See UF-7.
 
 ### Related PRD requirements
-US-04, US-12, BR-040 – BR-047, FR-024 – FR-031, AC-12 – AC-17, EC-09 – EC-12, ERR-07 – ERR-09, SEC-01, SEC-05, NFR-004, NFR-006.
+US-04, US-12, BR-040 – BR-049, BR-076, BR-078, FR-024 – FR-031, FR-030a, FR-030b, FR-100, AC-12 – AC-17, AC-16a, AC-17a, AC-29a, EC-09 – EC-12, EC-47, ERR-07 – ERR-09, ERR-25, SEC-01, SEC-05, SEC-13, NFR-004, NFR-006.
 
 ### Open questions
-- **Q-03:** Length of the payment-confirmation window for paid messages, and what happens if the clinic never confirms.
-- Starting the 24h clock at payment confirmation (BR-042) is an assumption to confirm.
+- The follow-up limit of 3 (BR-048) and the 2-hour clinic window (BR-076) are delegated rules [D] to validate in the pilot.
 - **EC-10:** The 24h SLA covers only the first reply; follow-ups are best-effort. Should the patient see any expected response time after the first reply? (Not defined in the PRD.)
 
 ---
 
 ## UF-2 — Booked live text consultation
+
+> **Should Have (PRD QR-17).** Built after the core journey, and the first feature to cut if the timeline slips. Async messages already arrive in real time, within the follow-up limit of BR-048.
 
 ```mermaid
 flowchart TD
@@ -258,12 +268,12 @@ flowchart TD
     SLOT --> FREE{"Slot still available?"}
     FREE -->|"No"| ERR10["ERR-10 This time is no longer available"]
     ERR10 --> SLOT
-    FREE -->|"Yes"| HOLD["Slot held pending payment"]
+    FREE -->|"Yes"| HOLD["Slot held from selection<br/>30 min to submit the reference BR-076"]
     HOLD --> PAY[["Manual payment verification<br/>UF-B — recipient: clinic"]]
-    PAY --> PAYOK{"Payment confirmed within window? Q-03"}
-    PAYOK -->|"No"| ERR15["ERR-15 Reservation expired, payment not confirmed<br/>slot released"]
+    PAY --> PAYOK{"Payment outcome"}
+    PAYOK -->|"Failed: no reference in 30 min<br/>or Not found twice"| ERR15["ERR-15 Reservation expired, payment not confirmed<br/>slot released"]
     ERR15 --> RESTART(["Exit: start again"])
-    PAYOK -->|"Yes"| CONF["Booking Confirmed<br/>notification and reminder scheduled Q-12"]
+    PAYOK -->|"Received, or no clinic decision<br/>within 2h or by start time BR-078"| CONF["Booking Confirmed<br/>notification and reminder scheduled Q-12"]
 
     CONF --> CANQ{"Cancelled by either party before start?"}
     CANQ -->|"Yes"| CANF[["Cancellation and refund UF-4"]]
@@ -272,7 +282,9 @@ flowchart TD
     ROOM --> JOIN{"Who joined within 15 min?"}
     JOIN -->|"Both"| LIVE["Live session S-10<br/>until original end time EC-15"]
     JOIN -->|"Doctor only - patient absent"| TOASYNC["Session converts to async message<br/>doctor replies within 24h - no refund"]
-    TOASYNC --> ASYNCF[["Continue as async consultation UF-1"]]
+    TOASYNC --> TAR{"Doctor replied within 24h?"}
+    TAR -->|"Yes"| ASYNCF[["Continue as async consultation UF-1"]]
+    TAR -->|"No"| REF
     JOIN -->|"Patient only or nobody EC-13"| DNS["Doctor no-show<br/>patient notified of options"]
     DNS --> CHOICE{"Patient's choice"}
     CHOICE -->|"Rebook"| SLOT
@@ -302,21 +314,20 @@ flowchart TD
 
 1. The patient selects the doctor, then **Live chat**; price and duration are set by the doctor (BR-051, FR-032).
 2. If there are no slots, "No availability" is shown; async messaging remains available if enabled (EC-08).
-3. A picked slot is held pending payment (FR-033). If another patient got there first — whoever **starts payment** first holds the slot — ERR-10 is shown (EC-21).
-4. **Payment is in advance to the clinic's wallet**, and the booking is confirmed only after the clinic confirms payment (BR-050, BR-052). If not confirmed within the window, the slot is released (ERR-15).
+3. A picked slot is held **from the moment it is selected** (FR-033). If another patient got there first, ERR-10 is shown (EC-21).
+4. **Payment is in advance to the clinic's wallet**, and the booking is confirmed after the clinic confirms payment (BR-050, BR-052). The patient has **30 minutes** to submit the reference, or the slot is released (ERR-15). If the clinic makes no decision within **2 hours**, or by the session start, the booking is confirmed anyway and flagged to the Admin (BR-076, BR-078).
 5. **At start time:**
-   - **Patient absent after 15 min:** the session converts to an async message; the doctor replies within 24h, **no refund** (BR-053).
+   - **Patient absent after 15 min:** the session converts to an async message; the doctor replies within 24h, **no refund** (BR-053). If the doctor then doesn't reply within 24h, the patient gets a **full refund** (BR-057, EC-41).
    - **Doctor absent after 15 min:** the patient chooses **Rebook** or **Full refund** (BR-054). Both absent is treated as a doctor no-show (EC-13 [A]).
    - **Doctor late but within 15 min:** the session runs to the original end time (EC-15 [A]).
 6. A dropped connection doesn't end the chat; it continues asynchronously with no extension (EC-14, ERR-11).
 7. After the duration ends, the 72h follow-up window applies and a prescription may be issued.
 
 ### Related PRD requirements
-US-05, BR-050 – BR-056, FR-032 – FR-038, FR-090, AC-18 – AC-21, EC-13 – EC-15, EC-21, ERR-10, ERR-11, ERR-15.
+US-05, BR-050 – BR-057, BR-076, BR-078, FR-032 – FR-038, FR-090, AC-18 – AC-21, AC-19a, AC-29b, EC-13 – EC-15, EC-21, EC-41, ERR-10, ERR-11, ERR-15.
 
 ### Open questions
 - **Q-07:** Can live chat ever be free? (The diagram assumes always paid — BR-056 [A].)
-- **Q-03:** How long a slot is held awaiting payment confirmation.
 - **Q-12:** Booking reminder timing.
 - **Q-18:** Minimum notice before a slot can be booked.
 
@@ -328,7 +339,10 @@ US-05, BR-050 – BR-056, FR-032 – FR-038, FR-090, AC-18 – AC-21, EC-13 – 
 flowchart TD
     START(["Patient on doctor profile S-03"]) --> SVC["Select In-person service"]
     SVC --> AUTHQ[["Login and select patient of record<br/>UF-A"]]
-    AUTHQ --> AVAIL{"Any slots available?"}
+    AUTHQ --> NSB{"Allowed to book? BR-063<br/>not blocked after 3 no-shows in 90 days<br/>and no active booking with this doctor"}
+    NSB -->|"No"| ERR28["ERR-28 In-person booking is paused<br/>or an active booking already exists"]
+    ERR28 --> NSBX(["Exit: async or live chat, or contact support"])
+    NSB -->|"Yes"| AVAIL{"Any slots available?"}
     AVAIL -->|"No"| NOAV(["Exit: No availability EC-08"])
     AVAIL -->|"Yes"| SLOT["Pick a slot S-07"]
     SLOT --> FREE{"Slot still available?"}
@@ -351,26 +365,27 @@ flowchart TD
     classDef entry fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
     classDef success fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef error fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
-    class START,NOAV,NSX,DONE entry
+    class START,NOAV,NSX,NSBX,DONE entry
     class CONF,DONEV success
-    class ERR10,NS error
+    class ERR10,NS,ERR28 error
 ```
 
 ### Explanation
 
 1. The patient selects the doctor, then **In-person**, then a slot. No payment goes through the platform; the patient pays at the clinic (BR-060).
+   - Because nothing is prepaid, abuse is limited: one active in-person booking per patient of record per doctor, and an account with **3 no-shows in 90 days** cannot book in-person visits for 30 days. The Admin can lift the block (BR-063, ERR-28, AC-23a).
 2. The booking is confirmed on slot selection (BR-061 [A]), and the clinic address, map pin, and payable price are shown (FR-040).
 3. After the visit, the doctor or staff marks it **Completed** or **No-show** (BR-062 [A], FR-041).
 4. **Prescriptions are only possible for Completed visits** (FR-042); none for a no-show (EC-16).
 5. After a prescription, the patient continues in Saydaliyati (PRD UF-1 steps 8–13 = UF-D here).
 
 ### Related PRD requirements
-US-06, BR-060 – BR-062, FR-039 – FR-042, AC-22, AC-23, EC-16, ERR-10.
+US-06, BR-060 – BR-063, FR-039 – FR-042, AC-22, AC-23, AC-23a, EC-16, ERR-10, ERR-28.
 
 ### Open questions
 - **Q-12:** Reminder timing.
 - **Q-18:** Minimum booking notice.
-- The PRD defines no consequence for repeated patient no-shows.
+- The no-show thresholds of BR-063 (3 in 90 days, 30-day block) are delegated rules [D] to validate in the pilot.
 
 ---
 
@@ -386,16 +401,20 @@ flowchart TD
         SHOW["Payment screen S-08<br/>amount in ILS [A], recipient wallet ID, instructions"]
         SHOW --> EXT["Pay outside the platform via<br/>PalPay, Jawwal Pay, or Bank of Palestine app"]
         EXT --> REFIN["Enter transaction reference and wallet used"]
-        REFIN --> USED{"Reference used before? [A]"}
+        REFIN --> INTIME{"Submitted within 30 min<br/>of the hold or acceptance? BR-076"}
+        INTIME -->|"No"| ERR15
+        INTIME -->|"Yes"| USED{"Reference already used<br/>with this wallet provider? BR-075"}
         USED -->|"Yes"| ERR13["ERR-13 This transaction number was already used"]
-        ERR13 --> REFIN
+        ERR13 --> FLAGQ{"Re-enter, or flag: this is my payment?"}
+        FLAGQ -->|"Re-enter"| REFIN
+        FLAGQ -->|"Flag"| ADMR["Admin review task EC-45"]
         USED -->|"No"| PEND["Payment pending confirmation"]
     end
 
     subgraph RECIPIENT["Recipient: Doctor or Clinic Staff, or Pharmacy"]
         PEND --> QUEUE["Shown in pending payments<br/>S-18 for clinic, S-24 for pharmacy"]
-        QUEUE --> INWIN{"Responded within confirmation window? Q-03"}
-        INWIN -->|"No"| ERR15["ERR-15 Reservation expired, payment not confirmed<br/>slot or order released"]
+        QUEUE --> INWIN{"Decided within provider window?<br/>clinic 2h, pharmacy 60 working min BR-076"}
+        INWIN -->|"No"| DEEMED["BR-078: patient protected, flagged to Admin<br/>async delivered or live booking confirmed<br/>pharmacy code marked Payment unverified"]
         INWIN -->|"Yes"| CHECK{"Check wallet: amount received?"}
         CHECK -->|"Received"| OK["Payment confirmed, logged who and when"]
         CHECK -->|"Not found"| ERR14["ERR-14 Couldn't find your payment"]
@@ -403,37 +422,39 @@ flowchart TD
 
     ERR14 --> FIRST{"First Not found? [A]"}
     FIRST -->|"Yes"| REFIN
-    FIRST -->|"No"| ERR15
+    FIRST -->|"No"| ERR15["ERR-15 Reservation expired, payment not confirmed<br/>slot or order released"]
 
     OK --> NOTIF["Patient notified: payment confirmed"]
     NOTIF --> BACK(["Return to calling flow: success"])
-    ERR15 --> FAILX(["Return to calling flow: failure<br/>EC-20 patient told to contact the clinic"])
+    DEEMED --> BACK
+    ERR15 --> FAILX(["Return to calling flow: failure"])
 
     classDef entry fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
     classDef success fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef error fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
     classDef pending fill:#fef9c3,stroke:#a16207,color:#713f12
     class START,BACK,FAILX entry
-    class OK,NOTIF success
+    class OK,NOTIF,DEEMED success
     class ERR13,ERR14,ERR15 error
-    class PEND,QUEUE pending
+    class PEND,QUEUE,ADMR pending
 ```
 
 ### Explanation
 
 1. **The platform never receives funds**; payment goes directly from the patient's wallet to the clinic's or pharmacy's wallet (BR-070).
 2. The platform shows the amount, recipient wallet ID, and instructions (FR-047). The patient pays in the wallet app, then enters the **transaction reference** and wallet used (BR-072, FR-048). **Receipt images are not used** (BR-074).
-3. A reference can be used only once on the platform (BR-075 [A], ERR-13).
-4. The **recipient** (doctor or Clinic Staff for clinics; the pharmacy for orders) checks their wallet and marks **Received** or **Not found** (BR-073, FR-050).
-5. On "Not found" the patient is notified and may **correct the reference once** before the hold is released (FR-051 [A]).
-6. If not confirmed within the **confirmation window**, the slot or order is released (BR-076, FR-052) — window length is an open question.
-7. Every confirmation is logged (who and when) (FR-053, NFR-011).
+3. **Patient window:** the reference must be submitted within **30 minutes** of the slot hold or the pharmacy's acceptance, or the hold is released (BR-076, ERR-15, AC-29b).
+4. A reference can be used only once **per wallet provider** (BR-075, ERR-13, AC-27). If the patient believes the number is theirs, they flag "this is my payment" and the Admin reviews it (EC-45).
+5. The **recipient** (doctor or Clinic Staff for clinics; the pharmacy for orders) checks their wallet and marks **Received** or **Not found** (BR-073, FR-050).
+6. On "Not found" the patient is notified and may **correct the reference once** before the hold is released (FR-051 [A]).
+7. **Provider window:** the clinic must decide within **2 hours**, the pharmacy within **60 minutes of its working hours**. With no decision, the patient is protected and the case is flagged to the Admin: a paid async case is delivered, a live booking is confirmed, and a pharmacy order gets a pickup code marked "Payment unverified", so the pharmacy checks its wallet at the counter (BR-078, FR-052, EC-20, AC-29a).
+8. Every confirmation is logged (who and when) (FR-053, NFR-011).
 
 ### Related PRD requirements
-US-07, US-16, BR-070 – BR-077, FR-047 – FR-053, FR-078, AC-26 – AC-29, EC-18 – EC-21, ERR-13 – ERR-15, INT-1.
+US-07, US-16, BR-070 – BR-078, FR-047 – FR-053, FR-078, AC-26 – AC-29, AC-29a, AC-29b, EC-18 – EC-21, EC-45, ERR-13 – ERR-15, INT-1.
 
 ### Open questions
-- **Q-03:** Confirmation window length, and whether there is escalation if the recipient never responds (EC-20).
+- The window lengths of BR-076 (30 min / 2 h / 60 min) are delegated rules [D] to validate in the pilot.
 - **Q-08:** Dispute resolution — patient says they paid, provider says no, or wrong amount paid (EC-19). No path exists beyond the single correction.
 - ILS currency (BR-077) and the single correction (FR-051) are assumptions.
 
@@ -451,14 +472,14 @@ flowchart TD
     ELIG -->|"Yes"| EDIT["Open prescription editor S-20<br/>linked to the service's patient of record"]
     EDIT --> SEARCH["Search catalog in Arabic or English"]
     SEARCH --> FOUND{"Medicine in catalog?"}
-    FOUND -->|"Yes"| ITEM["Add item: form and strength from catalog<br/>quantity and dosage instructions [A]"]
+    FOUND -->|"Yes"| ITEM["Add item: form, strength, and Prescription-only flag<br/>from catalog - quantity and dosage instructions [A]"]
     FOUND -->|"No"| FREE["Add free-text item<br/>shown to patient: Not available in Saydaliyati"]
     FREE --> REQ["Catalog-addition request auto-created<br/>sent to Admin - see UF-7"]
     REQ --> MORE
     ITEM --> MORE{"Add another item?"}
     MORE -->|"Yes"| SEARCH
     MORE -->|"No"| ISSUE["Issue prescription - not editable after issue [A]"]
-    ISSUE --> DELIV["Delivered to patient's Saydaliyati<br/>patient notified"]
+    ISSUE --> DELIV["Delivered to patient's Saydaliyati<br/>patient notified - valid 30 days BR-126"]
     DELIV --> WRONG{"Error in prescription?<br/>e.g. wrong family member EC-23"}
     WRONG -->|"No"| DONE(["Prescription available to patient - see UF-D"])
     WRONG -->|"Yes"| ORD{"Pharmacy order exists for it?"}
@@ -479,15 +500,14 @@ flowchart TD
 1. Only doctors can issue prescriptions (BR-083 [A]), and **only after a service performed on the platform**: an async message, a live chat, or a completed in-person visit (BR-080, ERR-16).
 2. Items are selected from the **unified catalog**, searchable in Arabic or English (BR-081, FR-055).
 3. If a medicine isn't in the catalog, the doctor adds a **free-text item** shown to the patient as "Not available in Saydaliyati", and a **catalog-addition request** is sent to the Admin automatically (BR-082, FR-056).
-4. Once issued, the prescription reaches Saydaliyati and the patient is notified (FR-058).
+4. Once issued, the prescription reaches Saydaliyati and the patient is notified (FR-058). It is **valid for 30 days**, and each item can be dispensed **once** (BR-126, BR-127). Items flagged **Prescription-only** in the catalog need the collector's name at pickup (BR-128).
 5. A prescription cannot be edited after issue; it can be cancelled and reissued **only if no pharmacy order exists** (BR-085 [A], FR-059, EC-23).
 
 ### Related PRD requirements
-US-13, US-14, BR-080 – BR-089, FR-054 – FR-063, AC-30 – AC-32, EC-22 – EC-24, ERR-16.
+US-13, US-14, BR-080 – BR-089, BR-126 – BR-128, FR-054 – FR-063, AC-30 – AC-32, EC-22 – EC-24, ERR-16.
 
 ### Open questions
-- **Q-19:** Can the same prescription be ordered more than once (refills)? What is its validity period?
-- **Q-14:** Regulatory requirements for e-prescriptions and prescription-only medicines.
+- **Q-19 / Q-14:** No refills and a 30-day validity (BR-126, BR-127), and the Prescription-only handling (BR-128), are proposed in PRD v1.1 and still need legal confirmation.
 - Non-editability after issue (BR-085) is an assumption.
 
 ---
@@ -497,30 +517,36 @@ US-13, US-14, BR-080 – BR-089, FR-054 – FR-063, AC-30 – AC-32, EC-22 – E
 ```mermaid
 flowchart TD
     START(["Prescription issued notification"]) --> LIST["Open Saydaliyati - prescriptions list S-11"]
-    LIST --> ONLYFT{"All items free-text?"}
+    LIST --> VALIDP{"Prescription within 30 days? BR-126"}
+    VALIDP -->|"No"| ERR27["ERR-27 This prescription has expired<br/>pending items marked Expired EC-43"]
+    ERR27 --> ERR27X(["Exit: start a new consultation"])
+    VALIDP -->|"Yes"| ONLYFT{"All items free-text?"}
     ONLYFT -->|"Yes"| FTX(["Show prescription, all items: Not available in Saydaliyati EC-22"])
     ONLYFT -->|"No"| GPS{"GPS allowed and successful?"}
     GPS -->|"No"| ERR19["ERR-19 Couldn't get your location<br/>choose area from list"]
     ERR19 --> RES
     GPS -->|"Yes"| RES["Pharmacy results S-12<br/>open and visible only - full availability first, then by distance<br/>price, last updated, outdated badge [A]"]
-    RES --> ANY{"Any pharmacy has any item?"}
-    ANY -->|"No"| ERR18["ERR-18 No nearby pharmacy currently has these medicines"]
+    RES --> ANY{"Any open pharmacy has any item?"}
+    ANY -->|"No"| CLQ{"Matching pharmacies exist<br/>but all are closed now? FR-070"}
+    CLQ -->|"Yes"| ERR26["ERR-26 Nearby pharmacies with these medicines are closed now<br/>the first opens at time EC-40"]
+    ERR26 --> LATER
+    CLQ -->|"No"| ERR18["ERR-18 No nearby pharmacy currently has these medicines"]
     ERR18 --> NOPH{"Change area or retry later?"}
     NOPH -->|"Change area"| ERR19
     NOPH -->|"Later"| LATER(["Exit: prescription stays pending"])
     ANY -->|"Yes"| FULL{"One pharmacy has all items?"}
     FULL -->|"Yes"| PICK["Pick one pharmacy<br/>pickup window shown before ordering"]
     FULL -->|"No"| HOW{"How does the patient proceed?"}
-    HOW -->|"Split"| SPLIT["Split order: one sub-order per pharmacy"]
-    HOW -->|"Buy available"| SUB["Order available items<br/>rest stays Pending on prescription"]
+    HOW -->|"Split - Should Have"| SPLIT["Split order: one sub-order per pharmacy"]
+    HOW -->|"Buy available"| SUB["Order available items<br/>rest stays Pending until the prescription expires"]
     PICK --> SEND["Send order"]
     SPLIT --> SEND
     SUB --> SEND
 
-    SEND --> PHQ["Pharmacy receives order S-24<br/>items only, no diagnosis - countdown"]
-    PHQ --> RESP{"Pharmacy response within 30 working minutes?"}
+    SEND --> PHQ["Pharmacy receives order S-24<br/>items only, no diagnosis - countdown<br/>items locked while the order is active BR-127"]
+    PHQ --> RESP{"Pharmacy response within 30 working minutes?<br/>paused while toggled Closed EC-39"}
     RESP -->|"No response"| ERR21["ERR-21 The pharmacy didn't respond in time<br/>auto-cancelled"]
-    RESP -->|"Reject with reason [A]"| ERR20["ERR-20 The pharmacy couldn't fulfil your order"]
+    RESP -->|"Reject with reason [A]<br/>incl. partial stock - no partial accept"| ERR20["ERR-20 The pharmacy couldn't fulfil your order"]
     ERR21 --> BACKP["Items return to Pending<br/>other sub-orders continue EC-28"]
     ERR20 --> BACKP
     BACKP --> RES
@@ -528,9 +554,9 @@ flowchart TD
     PRICE -->|"No"| BACKP
     PRICE -->|"Yes"| PAY[["Manual payment verification<br/>UF-B — recipient: pharmacy"]]
     PAY --> PAYOK{"Payment confirmed?"}
-    PAYOK -->|"No"| RELEASE["Order released EC-32 - Q-03"]
+    PAYOK -->|"No: no reference in 30 min<br/>or Not found twice"| RELEASE["Order released EC-32"]
     RELEASE --> BACKP
-    PAYOK -->|"Yes"| CODE["Pickup code issued: numeric and QR<br/>available offline S-13"]
+    PAYOK -->|"Received, or no pharmacy decision<br/>within 60 working min BR-078"| CODE["Pickup code issued: numeric and QR<br/>available offline S-13<br/>marked Payment unverified if not confirmed"]
     CODE --> REMIND["Daily reminder until pickup or expiry"]
     REMIND --> INWIN{"Someone with the code arrived within pickup window?"}
     INWIN -->|"No"| EXPIRED["Status: Expired<br/>payment outcome Q-04"]
@@ -539,41 +565,46 @@ flowchart TD
     VERIFY --> VALID{"Code valid for this pharmacy?"}
     VALID -->|"No"| ERR22["ERR-22 Code not valid for this pharmacy"]
     ERR22 --> VERIFY
-    VALID -->|"Yes"| DELIV["Status: Delivered"]
+    VALID -->|"Yes"| UNV{"Payment unverified?"}
+    UNV -->|"Yes"| WCHK["Pharmacy checks its wallet at the counter BR-078"]
+    UNV -->|"No"| RXO
+    WCHK --> RXO{"Order has a Prescription-only item?"}
+    RXO -->|"Yes"| NAME["Record collector's name<br/>and check patient of record BR-128"]
+    RXO -->|"No"| DELIV
+    NAME --> DELIV["Status: Delivered<br/>items dispensed, cannot be reordered BR-127"]
     DELIV --> DONE(["End: medicine in patient's or relative's hands"])
 
     classDef entry fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
     classDef success fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef error fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
     classDef pending fill:#fef9c3,stroke:#a16207,color:#713f12
-    class START,FTX,LATER,EXPX,DONE entry
+    class START,FTX,LATER,EXPX,DONE,ERR27X entry
     class CODE,DELIV success
-    class ERR18,ERR19,ERR20,ERR21,ERR22,EXPIRED,RELEASE error
+    class ERR18,ERR19,ERR20,ERR21,ERR22,ERR26,ERR27,EXPIRED,RELEASE error
     class PHQ,REMIND,BACKP pending
 ```
 
 ### Explanation
 
-1. A notification arrives and the patient opens **Saydaliyati**. Free-text items are never matched to pharmacies (BR-125); if all items are free-text, only the prescription is shown (EC-22).
+1. A notification arrives and the patient opens **Saydaliyati**. A prescription is valid for **30 days**; after that its pending items cannot be ordered (BR-126, ERR-27, EC-43). Free-text items are never matched to pharmacies (BR-125); if all items are free-text, only the prescription is shown (EC-22).
 2. **Location:** GPS first; if denied or failed, the patient picks an area from a list (BR-120, ERR-19, EC-25).
 3. **Results:** only open, non-hidden pharmacies (BR-124), ranked with full-availability pharmacies first, then by distance (BR-121, FR-066), with price and "last updated" (BR-122), and an "outdated" badge after 48h (BR-134 [A], EC-27).
-4. If no pharmacy has anything, ERR-18 is shown with options to change area or retry later (FR-070).
-5. If no single pharmacy has everything, the patient chooses to **split** across pharmacies or **buy what's available** and leave the rest pending (BR-123, FR-067, FR-068). The pickup window is shown before ordering (FR-069).
-6. The **pharmacy** sees items only, no diagnosis (FR-077, SEC-02), and must accept or reject within **30 minutes of its working hours**, or the order auto-cancels (BR-131, FR-075, FR-076). Rejection includes a reason (BR-133 [A]).
+4. If no pharmacy has anything, ERR-18 is shown with options to change area or retry later. If matching pharmacies exist but are all closed (for example at night), ERR-26 shows the earliest opening time instead (FR-070, EC-40).
+5. If no single pharmacy has everything, the patient can **buy what's available** and leave the rest pending until the prescription expires (BR-123, FR-068). **Splitting** across pharmacies in one step (FR-067) is Should Have; without it the patient reaches the same result by ordering subsets one after another. The pickup window is shown before ordering (FR-069).
+6. The **pharmacy** sees items only, no diagnosis (FR-077, SEC-02), and must accept or reject within **30 minutes of its working hours**, or the order auto-cancels (BR-131, FR-075, FR-076). Time while it is toggled Closed doesn't count (EC-39). Rejection includes a reason, including "partial stock"; partial acceptance isn't supported (BR-133). Items in an active order are locked (BR-127).
 7. On rejection or auto-cancel, items return to Pending and the patient picks another pharmacy; other sub-orders continue (EC-28).
 8. **Payment happens only after acceptance**, and the accepted price is the price to pay (BR-132). The patient may decline before paying if the price changed (EC-30 [A]).
-9. Once the pharmacy confirms payment, a **pickup code** (numeric + QR) is issued and viewable offline (BR-095, FR-079, FR-080). **Anyone holding the code can collect** (BR-096). A daily reminder runs until pickup or expiry (BR-098).
-10. The pharmacy enters or scans the code; if it belongs to another pharmacy, ERR-22 is shown; otherwise the order is marked **Delivered** (FR-081).
+9. The patient must submit the payment reference within **30 minutes** of acceptance, or the order is released (BR-076, EC-32). Once the pharmacy confirms payment, a **pickup code** (numeric + QR) is issued and viewable offline (BR-095, FR-079, FR-080). If the pharmacy makes no decision within 60 working minutes, the code is still issued but marked "Payment unverified" (BR-078). **Anyone holding the code can collect** (BR-096). A daily reminder runs until pickup or expiry (BR-098).
+10. The pharmacy enters or scans the code; if it belongs to another pharmacy, ERR-22 is shown. For an unverified payment it checks its wallet first; for Prescription-only items it records the collector's name (BR-128, AC-47a). The order is then marked **Delivered**, and its items can't be ordered again (FR-081, BR-127).
 11. If the pickup window ends, the order becomes **Expired** (FR-083); what happens to the payment is open (Q-04).
 
 ### Related PRD requirements
-US-09 – US-11, US-19 – US-21, BR-095 – BR-099, BR-120 – BR-134, FR-064 – FR-083, AC-35 – AC-47, EC-22, EC-25 – EC-34, ERR-18 – ERR-22, SEC-02, SEC-10, NFR-005.
+US-09 – US-11, US-19 – US-21, BR-076, BR-078, BR-095 – BR-099, BR-120 – BR-134, FR-064 – FR-083, AC-35 – AC-47, AC-39a – AC-39c, AC-41a, AC-47a, EC-22, EC-25 – EC-34, EC-39, EC-40, EC-43, EC-44, ERR-18 – ERR-22, ERR-26, ERR-27, SEC-02, SEC-10, NFR-005.
 
 ### Open questions
 - **Q-04:** When a paid order expires uncollected, is the patient refunded fully, partially, or not at all?
 - **Q-09:** Stock-out after acceptance and payment (EC-31): the pharmacy must refund and cancel, but handling and consequences are undefined — so it isn't drawn as a path.
-- **Q-03:** How long the order waits for the patient's payment after acceptance (EC-32).
-- **Q-19:** Can the same prescription be reordered? How are long-pending items handled?
+- **Q-14 / Q-19:** The 30-day validity, single dispensing, and Prescription-only handling (BR-126 – BR-128) still need legal confirmation.
 - "Notify me when available" is deferred to Phase 3, so it is not drawn under ERR-18.
 
 ---
@@ -612,7 +643,7 @@ flowchart TD
     CPAID -->|"No"| DONE1(["End"])
     CPAID -->|"Yes"| TASK
 
-    OTHERSRC(["Other refund sources:<br/>paid async with no reply UF-1<br/>doctor no-show UF-2"]) --> TASK
+    OTHERSRC(["Other refund sources:<br/>paid async with no reply or withdrawn UF-1<br/>doctor no-show or converted session unanswered UF-2<br/>doctor deactivated UF-5"]) --> TASK
 
     TASK["Refund task created for clinic S-18"] --> REFUND["Clinic refunds patient's wallet off-platform"]
     REFUND --> MARKED{"Clinic marked Refunded within 72h? [A]"}
@@ -644,15 +675,14 @@ flowchart TD
 6. Removing availability that has bookings requires cancelling them, which counts as a clinic cancellation (BR-068 [A], ERR-12).
 
 **Refund execution:**
-7. A **refund task** is created for the clinic (FR-086). The clinic refunds the patient's wallet directly, marks "Refunded", and the patient is notified (BR-093).
+7. A **refund task** is created for the clinic (FR-086). Besides cancellations, refund tasks come from an unanswered paid message (BR-043), a withdrawn paid message (BR-049), a doctor no-show (BR-054), an unanswered converted live session (BR-057), and a doctor's deactivation (FR-009). The clinic refunds the patient's wallet directly, marks "Refunded", and the patient is notified (BR-093).
 8. Tasks overdue by more than 72h are shown to the Admin (FR-087 [A], EC-36). What the Admin does next is undefined (Q-08).
 
 ### Related PRD requirements
-US-08, BR-068, BR-090 – BR-094, BR-043, BR-054, FR-084 – FR-087, AC-48 – AC-50, EC-35, EC-36, ERR-12, ERR-23.
+US-08, BR-068, BR-090 – BR-094, BR-043, BR-049, BR-054, BR-057, FR-009, FR-084 – FR-087, AC-48 – AC-50, EC-35, EC-36, ERR-12, ERR-23.
 
 ### Open questions
 - **Q-08:** How refunds are enforced and the Admin's role in disputes.
-- Cancelling a paid async message before the doctor replies is not covered in the PRD (cancellation is defined for bookings only).
 - The 72h overdue threshold (FR-087) is an assumption.
 
 ---
@@ -665,7 +695,7 @@ flowchart TD
     FORM --> PIN{"Map pin set?"}
     PIN -->|"No"| ERR03["ERR-03 Set your location on the map"]
     ERR03 --> PIN
-    PIN -->|"Yes"| DOCS["For each doctor: practice license<br/>and dermatology specialty certificate"]
+    PIN -->|"Yes"| DOCS["For each doctor: practice license number and document<br/>and dermatology specialty certificate"]
     DOCS --> VALID{"Documents complete, valid type and size?"}
     VALID -->|"No"| ERR01["ERR-01 Please upload the required document"]
     ERR01 --> DOCS
@@ -684,6 +714,8 @@ flowchart TD
     DREV -->|"No - pending or rejected"| HIDDEN["Doctor hidden from patients"]
     HIDDEN --> DREV
     DREV -->|"Yes"| VISIBLE["Doctor visible to patients"]
+    VISIBLE --> DEACT{"Manager deactivates the doctor? FR-009"}
+    DEACT -->|"Yes"| DEACTR["Future bookings cancelled as clinic cancellations<br/>open consultations closed, patients notified<br/>refund tasks for unanswered paid cases<br/>issued prescriptions stay valid"]
 
     APPROVED --> TRIAL["Free trial starts Q-02 and Q-05"]
     TRIAL --> DUE{"At due date: Admin recorded payment?"}
@@ -701,26 +733,26 @@ flowchart TD
     classDef pending fill:#fef9c3,stroke:#a16207,color:#713f12
     class START entry
     class APPROVED,VISIBLE,ACTIVE success
-    class ERR01,ERR02,ERR03,HID error
+    class ERR01,ERR02,ERR03,HID,DEACTR error
     class SUBMIT,HIDDEN,GRACE,TRIAL pending
 ```
 
 ### Explanation
 
-1. The **Clinic Manager** self-registers the clinic: name, address, map pin, phone, clinic license, and for each doctor a practice license and dermatology specialty certificate (BR-003, FR-001, FR-002). No doctor without a physical clinic (BR-001); a private clinic is a one-doctor clinic (BR-002).
+1. The **Clinic Manager** self-registers the clinic: name, address, map pin, phone, clinic license, and for each doctor a practice license and dermatology specialty certificate (BR-003, FR-001, FR-002). The practice license number is unique, so the same doctor can't join two clinics (BR-006, EC-02). No doctor without a physical clinic (BR-001); a private clinic is a one-doctor clinic (BR-002), and its manager may also hold the Doctor role (BR-008).
 2. A missing document blocks submission (ERR-01, AC-01), as does a missing map pin (ERR-03, AC-05).
 3. After submission the status is **Pending Review** and the clinic is **hidden** (BR-004, FR-003, AC-02).
 4. The **Admin** approves or rejects with a **mandatory reason** (FR-004, AC-03). A rejected applicant edits and resubmits (BR-007 [A]).
 5. After approval, the manager sets wallet IDs and invites doctors and staff by email (FR-007); each doctor configures services and prices; the schedule is set by the doctor or staff (BR-065, FR-043).
 6. **Each doctor** stays hidden until the Admin approves their documents (BR-005, FR-008, AC-04). A clinic with zero visible doctors is not listed (EC-01 [A]).
+   - **Deactivating a doctor:** future bookings are cancelled as clinic cancellations, open consultations are closed and the patients notified, unanswered paid cases get refund tasks, and issued prescriptions stay valid. Transfer to another doctor is out of scope (FR-009, EC-42, AC-05a).
 7. **Subscription:** free trial, then monthly (BR-111). If unpaid at the due date, a **7-day grace period** starts, after which the partner is **hidden from new patients** while existing bookings continue (BR-113, FR-093, FR-094, AC-52, AC-53). Payments are recorded manually by the Admin (BR-114).
 
 ### Related PRD requirements
-US-15, US-17, US-22, US-24, BR-001 – BR-007, BR-065 – BR-068, BR-110 – BR-114, FR-001 – FR-009, FR-043 – FR-046, FR-091 – FR-094, AC-01 – AC-05, AC-24, AC-25, AC-52, AC-53, EC-01 – EC-04, EC-38, ERR-01 – ERR-03.
+US-15, US-17, US-22, US-24, BR-001 – BR-008, BR-065 – BR-068, BR-110 – BR-114, FR-001 – FR-009, FR-043 – FR-046, FR-091 – FR-094, AC-01 – AC-05, AC-05a, AC-24, AC-25, AC-52, AC-53, EC-01 – EC-04, EC-38, EC-42, ERR-01 – ERR-03.
 
 ### Open questions
 - **Q-02 / Q-05 / Q-06:** When the trial starts, its length, and subscription prices.
-- **Q-15:** Can a Clinic Manager also be a doctor in the same account?
 - **EC-04:** An address change requires re-review while the clinic stays visible — an assumption, not drawn as a separate path.
 - The PRD doesn't say whether a Hidden partner becomes visible immediately on payment (the diagram simply returns it to the due-date cycle).
 
@@ -746,8 +778,9 @@ flowchart TD
     SETTINGS --> INV["Set price and stock for catalog items S-23<br/>pharmacies don't add medicines"]
 
     INV --> DAY(["Start of working day"])
-    DAY --> OPENQ{"Pharmacy open?"}
-    OPENQ -->|"No - temporary closure"| CLOSED["Toggle Closed: hidden from results"]
+    DAY --> RMD["Daily update reminder at opening time BR-130"]
+    RMD --> OPENQ{"Pharmacy open?"}
+    OPENQ -->|"No - temporary closure"| CLOSED["Toggle Closed: hidden from results<br/>order countdowns paused FR-075"]
     CLOSED --> DAY
     OPENQ -->|"Yes"| UPD{"Prices or stock changed?"}
     UPD -->|"Yes"| EDIT["Update changed items"]
@@ -774,13 +807,13 @@ flowchart TD
 1. **Registration** works like clinics: self-registration, document upload, Admin approval (BR-010, FR-012). Required documents are derived from "same as clinics" (BR-011 [A]).
 2. Working hours and at least one wallet ID are mandatory (BR-012, BR-013, FR-011 [A], AC-06), since working hours drive the 30-minute rule and hiding closed pharmacies.
 3. After approval the pharmacy sets its pickup window (BR-097) and price and stock **for catalog items only** (BR-089, FR-071).
-4. **Daily:** update prices and stock (BR-130), with a quick "no change" confirm screen (FR-072 [A]). Every update is timestamped and shown (FR-073).
-5. The pharmacy can toggle **Closed** temporarily (e.g. during a power cut) and disappears from results (FR-013 [A], EC-05, AC-07).
+4. **Daily:** the system sends an update reminder at opening time, and the pharmacy updates prices and stock (BR-130), with a quick "no change" confirm screen (FR-072 [A]). Every update is timestamped and shown (FR-073).
+5. The pharmacy can toggle **Closed** temporarily (e.g. during a power cut) and disappears from results (FR-013 [A], EC-05, AC-07). Order countdowns pause while it is Closed (FR-075, EC-39, AC-41a).
 6. No update for more than 48h shows an "outdated" badge (BR-134 [A]).
 7. The subscription follows the same cycle as clinics in UF-5.
 
 ### Related PRD requirements
-US-18, US-19, US-22, BR-010 – BR-013, BR-089, BR-097, BR-130, BR-134, FR-010 – FR-013, FR-071 – FR-073, AC-06, AC-07, EC-05, ERR-01 – ERR-03.
+US-18, US-19, US-22, BR-010 – BR-013, BR-089, BR-097, BR-130, BR-134, FR-010 – FR-013, FR-071 – FR-073, FR-075, AC-06, AC-07, AC-41a, EC-05, EC-39, ERR-01 – ERR-03.
 
 ### Open questions
 - **Q-16:** Does a pharmacy need multiple staff logins?
@@ -809,7 +842,7 @@ flowchart TD
     CTYPE -->|"Doctor's addition request"| CREQ{"Request decision"}
     CREQ -->|"Reject"| CREJ["Reject request"]
     CREQ -->|"Approve"| CNEW
-    CTYPE -->|"Create or edit item"| CNEW["AR name, EN name, form, strength"]
+    CTYPE -->|"Create or edit item"| CNEW["AR name, EN name, form, strength<br/>Prescription-only flag BR-128"]
     CNEW --> CDUP{"Item with same EN name,<br/>form and strength exists? [A]"}
     CDUP -->|"Yes"| ERR17["ERR-17 This medicine already exists<br/>edit existing"]
     ERR17 --> CNEW
@@ -826,6 +859,14 @@ flowchart TD
     OACT -->|"Yes"| OSUS["Suspend partner or patient account with reason [A]"]
     OACT -->|"No"| OQ8(["Handling undefined Q-08"])
 
+    HOME -->|"Payment flags"| PF["Reference conflicts BR-075<br/>provider windows lapsed BR-078<br/>lift no-show blocks BR-063"]
+    PF --> PFD["Review and resolve with the parties"]
+
+    HOME -->|"Reports - Report Reviewer only"| RQ["Reported content FR-100<br/>reported messages only - 14 days - every view logged"]
+    RQ --> RDEC{"Report decision"}
+    RDEC -->|"Abuse confirmed"| OSUS
+    RDEC -->|"No action"| RCLOSE["Close report"]
+
     VOK --> BACK(["Back to console"])
     VREJ --> BACK
     CREJ --> BACK
@@ -833,29 +874,32 @@ flowchart TD
     CDEACT --> BACK
     SSTAT --> BACK
     OSUS --> BACK
+    PFD --> BACK
+    RCLOSE --> BACK
 
     classDef entry fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
     classDef success fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef error fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
     class START,BACK,OQ8 entry
-    class VOK,CSAVE,SSTAT success
+    class VOK,CSAVE,SSTAT,RCLOSE success
     class VBLOCK,ERR17,OLATE error
 ```
 
 ### Explanation
 
 1. **Verification queue:** the Admin reviews documents of clinics, doctors, and pharmacies and approves or rejects; **rejection requires a reason** (FR-004, FR-095, AC-03).
-2. **Catalog:** only the Admin creates, edits, and deactivates items (BR-087, FR-060); each item has an Arabic and an English name (BR-088). The Admin handles doctors' addition requests (FR-061). Duplicates are blocked (FR-062 [A], ERR-17). A deactivated item stays on existing prescriptions and orders (FR-063 [A], EC-24).
+2. **Catalog:** only the Admin creates, edits, and deactivates items (BR-087, FR-060); each item has an Arabic and an English name (BR-088) and a Prescription-only flag (BR-128). The Admin handles doctors' addition requests (FR-061). Duplicates are blocked (FR-062 [A], ERR-17). A deactivated item stays on existing prescriptions and orders (FR-063 [A], EC-24).
 3. **Subscriptions:** the Admin records payments manually and tracks statuses (BR-114, FR-091, FR-092).
 4. **Monitoring:** the Admin sees overdue refund tasks (FR-087 [A]) and can suspend any account with a reason (FR-098 [A]).
-5. **The Admin has no access to medical content** in the MVP (FR-099 [A]).
+5. **Payment flags:** the Admin reviews reference conflicts flagged by patients (BR-075), cases where a provider let its confirmation window lapse (BR-078), and can lift no-show blocks (BR-063).
+6. **Reports:** the Admin has no general access to medical content (FR-099). A **Report Reviewer** sees only the reported messages, for 14 days, and every view is logged (FR-100, SEC-13, AC-53a). Confirmed abuse can lead to suspension.
 
 ### Related PRD requirements
-US-22 – US-24, BR-004, BR-005, BR-087, BR-088, BR-113, BR-114, FR-004, FR-060 – FR-063, FR-087, FR-091 – FR-099, AC-03, AC-33, AC-34, AC-52, EC-24, ERR-17.
+US-22 – US-24, BR-004, BR-005, BR-063, BR-075, BR-078, BR-087, BR-088, BR-113, BR-114, BR-128, FR-004, FR-060 – FR-063, FR-087, FR-091 – FR-100, AC-03, AC-33, AC-34, AC-52, AC-53a, EC-24, ERR-17, SEC-13.
 
 ### Open questions
 - **Q-08:** What action is expected from the Admin on overdue refunds or disputes?
-- **Q-10:** Can the Admin access medical content for disputes or abuse reports?
+- **Q-10:** Report-only access (FR-100) still needs legal confirmation.
 - **Q-20:** Who compiles the initial catalog and areas list?
 - The suspension power (FR-098) and notifying the applicant of the decision (FR-005) are assumptions.
 
@@ -865,15 +909,15 @@ US-22 – US-24, BR-004, BR-005, BR-087, BR-088, BR-113, BR-114, FR-004, FR-060 
 
 | Question | Affected flows | Design impact |
 |---|---|---|
-| Q-03 Payment-confirmation window and escalation | UF-1, UF-2, UF-B, UF-D | Countdown on payment screen; ERR-15 copy |
 | Q-04 Payment outcome of an expired order | UF-D | What the patient sees in "Expired" state |
 | Q-07 Can live chat be free? | UF-2 | Skip payment step if free is allowed |
 | Q-08 Disputes and refund enforcement | UF-B, UF-4, UF-7 | Path after the single correction; overdue-refund path |
 | Q-09 Stock-out after payment | UF-D | Pharmacy refund path not drawn |
-| Q-10 Admin access to medical content | UF-0, UF-7 | Extra Admin screens if allowed |
+| Q-10 Admin access to reported content (legal) | UF-0, UF-7 | Report screens drawn; remove if not allowed |
 | Q-12 Reminder timing | UF-2, UF-3 | Notification scheduling |
-| Q-15 Clinic Manager also a doctor? | UF-0, UF-5 | Role switching in navigation |
 | Q-16 Multiple pharmacy logins | UF-0, UF-6 | Pharmacy staff management |
 | Q-18 Minimum booking notice | UF-2, UF-3 | Hiding near-term slots |
-| Q-19 Prescription refills and validity | UF-C, UF-D | Prescription state after ordering |
+| Q-14 / Q-19 Legal check of 30-day validity, no refills, Prescription-only handling | UF-C, UF-D | Expiry state and collector-name step |
 | Q-02 / Q-05 / Q-06 Subscription | UF-5, UF-6 | Trial start and length |
+
+**Resolved in PRD v1.1:** Q-03 (payment windows, BR-076 and BR-078) and Q-15 (manager may also be a doctor, BR-008). Both are drawn in the flows above.

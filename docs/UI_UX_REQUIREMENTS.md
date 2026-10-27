@@ -2,8 +2,8 @@
 
 | Item | Value |
 |---|---|
-| Status | Draft 1.0, ready for design |
-| Date | 2026-10-24 |
+| Status | Draft 1.1, ready for design (updated for PRD v1.1) |
+| Date | 2026-10-24 · updated 2026-10-27 |
 | Source | UX discovery interview (Arabic, MCQ format), 2026-10-22 to 2026-10-24, on top of the approved PRD ([PRD.md](PRD.md) / [PRD.ar.md](PRD.ar.md)) |
 | Scope | Information architecture, navigation, layout, content hierarchy, forms, interactions, UI states, responsive behavior, accessibility, language, visual identity |
 | Out of scope | Visual mockups, code, and any feature not in the PRD |
@@ -21,13 +21,15 @@ Each decision is tagged with its source:
 
 This document adds **no new features**. Where a UI element is listed, it exists to serve a PRD requirement, which is cited.
 
+**v1.1 changes:** the PRD review (PRD §26.1, QR-11 – QR-20) added rules for follow-up limits, payment windows, reports, prescription validity, prescription-only medicines, in-person no-shows, and closed pharmacies, and moved live chat and split orders to Should Have. The screens below reflect those rules.
+
 ---
 
 ## 1. Design Principles
 
 | # | Principle | Why | Source |
 |---|---|---|---|
-| P1 | **Mobile-first, low-bandwidth-first.** Every screen is designed at 360px width and must meet the 3G budget (NFR-003: first useful screen ≤ 3s, ≤ 1MB excluding user images). | Gaza: phones are the main device, connectivity is weak. | [C] |
+| P1 | **Mobile-first, low-bandwidth-first.** Every screen is designed at 360px width and must meet the 3G budget (NFR-003: LCP ≤ 3s at p75 on a mid-range Android phone over throttled 3G, ≤ 1MB excluding user images). | Gaza: phones are the main device, connectivity is weak. | [C] |
 | P2 | **Offline is a normal state, not an error.** | Power and network cuts are frequent (G-6). | [C] |
 | P3 | **Always show "where am I and what happens next".** Every waiting state shows its stage and remaining time. | The product is full of timers (24h, 72h, 15min, 30min). | [C] |
 | P4 | **Money is explicit.** Price, who receives it, and refund rules are visible before any commitment. | Payments happen outside the platform (BR-070). | [D] |
@@ -117,7 +119,8 @@ Admin (desktop sidebar)
 ├── Verification Queue ........................... S-26
 ├── Medicine List + addition requests ............ S-27
 ├── Partners & Subscriptions ..................... S-28
-└── Overdue Refunds & Suspensions ................ S-29
+├── Overdue Refunds, Payment Flags & Suspensions . S-29
+└── Reports (Report Reviewer permission only) .... FR-100
 ```
 
 ---
@@ -146,11 +149,11 @@ Admin (desktop sidebar)
 | Clinic staff | Today's Patients · Schedule · Payments · Notifications · My Account | [C] |
 | Clinic manager (non-doctor) | Clinic · Schedule · Payments · Notifications · My Account | [D] |
 | Pharmacy | Orders · Pickup · Inventory · Notifications · My Account | [C] |
-| Admin | Sidebar: Pending Tasks · Verification · Medicine List · Partners & Subscriptions · Overdue Refunds | [C] home / [D] order |
+| Admin | Sidebar: Pending Tasks · Verification · Medicine List · Partners & Subscriptions · Overdue Refunds & Payment Flags · Reports (Report Reviewers only, FR-100) | [C] home / [D] order |
 
 Notes:
 - Prescriptions are **not** a doctor tab. They are written and viewed only inside the patient conversation. [C]
-- A doctor who is also clinic manager finds **Clinic Management** inside **My Account**. No role switcher. [C]
+- A doctor who is also clinic manager finds **Clinic Management** inside **My Account**. No role switcher. [C] (PRD BR-008)
 - Clinic staff's **Today's Patients** lists in-person appointments (name, time, doctor) with "Completed / No-show" actions (BR-062). It contains **no medical content**. [C]
 
 ### 3.3 Family members (patient)
@@ -187,7 +190,7 @@ Clinic name → address + "Open in maps" link (no embedded map, to save data [D]
 1. Header: name, clinic, area.
 2. **Three stacked service cards**, each with: name, one-line explanation (e.g. "Reply within 24 hours"), price, and a primary button. A disabled service is greyed with "Unavailable".
    - Message: Free / price / Unavailable (BR-040).
-   - Live chat: price + duration (BR-051); button → S-07.
+   - Live chat: price + duration (BR-051); button → S-07. Live chat is **Should Have** (PRD QR-17): if it isn't in the release, the card is not shown at all (not greyed). [PRD]
    - In-person: price + "Pay at the clinic" (BR-060); button → S-07.
 3. Clinic info + "Open in maps".
 - Visitor tapping any service → login/register → returns to the **same doctor page** with the service pre-selected (UF-1 step 2). [PRD]
@@ -200,6 +203,8 @@ Clinic name → address + "Open in maps" link (no embedded map, to save data [D]
 **S-07 Slot picker** [PRD]
 "Who is this for?" → horizontal day strip (next 14 days [D]) → available time slots as large tappable chips → summary (service, date/time in Asia/Gaza, price, cancellation rule) → Confirm.
 - Days with no slots are shown disabled, not hidden. [D]
+- After Confirm, the slot is held: show a **30-minute countdown** to submit the payment reference (BR-076). [PRD]
+- In-person: if the account is blocked after 3 no-shows, or already has an active booking with this doctor, show ERR-28 with the unblock date instead of the slot strip (BR-063). [PRD]
 
 **S-08 Payment** [C]
 **One screen with numbered steps**, state preserved if the user leaves to the wallet app and returns:
@@ -207,8 +212,10 @@ Clinic name → address + "Open in maps" link (no embedded map, to save data [D]
 2. Copy recipient wallet ID and **exact amount** (each with a "Copy" button).
 3. Pay from your wallet app.
 4. Come back and enter the **transaction number** → Submit.
-- Show who receives the money ("Paid directly to <clinic/pharmacy>", BR-070) and the confirmation deadline (Q-03, once decided). [D]
-- After submit → status timeline (§5.2) at stage "Awaiting confirmation".
+- Show who receives the money ("Paid directly to <clinic/pharmacy>", BR-070). [D]
+- Before submit: a countdown of the **30 minutes** left to enter the transaction number (BR-076). [PRD]
+- After submit → status timeline (§5.2) at stage "Awaiting confirmation", with the provider's deadline: "The clinic confirms within 2 hours" / "The pharmacy confirms within 60 minutes of its opening hours" (BR-076). If the deadline passes, the timeline moves on and says so (BR-078). [PRD]
+- On ERR-13 (number already used with this wallet): two actions, **Re-enter** and **This is my payment** (sends it to the Admin for review, BR-075). [PRD]
 
 **S-09 My Consultations** [C]
 Filter chips (family) → segmented: Active / Past [D] → items showing member name, doctor, type, status timeline summary, remaining time.
@@ -218,29 +225,35 @@ Filter chips (family) → segmented: Active / Past [D] → items showing member 
 - Messages with per-message state: Sending ⏳ / Sent ✓ / Failed (tap to retry). [D]
 - Prescription appears as a distinct **prescription card** in the thread with "Open in My Pharmacy". [D]
 - When closed: composer is replaced by "Conversation closed — start a new consultation". (BR-044)
-- Live chat: 15-minute waiting state with countdown for both sides (BR-053/054); if the doctor no-shows, the patient sees the two choices "Rebook" / "Refund". [PRD]
+- **Follow-up limit (patient side):** during the 72h window, the composer shows "2 of 3 follow-ups left". At zero, the composer is replaced by ERR-25 with "Book a live chat" and "New consultation". The doctor's composer is never limited (BR-048, FR-030a). [PRD]
+- **Withdraw:** while a paid case is not yet opened by the doctor, the patient sees "Withdraw and get a refund", behind a confirmation sheet (BR-049). [PRD]
+- **Report:** long-press (or the ⋮ menu) on a message → "Report" → reason picker (abuse, harassment, impersonation, inappropriate content, other). The sheet states that only the reported messages are shared with a reviewer (FR-100). Available to patient and doctor. [PRD]
+- Live chat: 15-minute waiting state with countdown for both sides (BR-053/054); if the doctor no-shows, the patient sees the two choices "Rebook" / "Refund". If the patient no-shows, the thread turns into an async case with a 24h reply deadline; if the doctor misses it, the timeline shows "Refund requested" (BR-057). [PRD]
 
 **S-11 My Pharmacy — prescriptions** [PRD]
-Filter chips (family) → prescription cards: member, doctor, date, item count, status (not ordered / partially ordered / fully ordered). Free-text items marked "Not available in My Pharmacy" (BR-082).
+Filter chips (family) → prescription cards: member, doctor, date, **"Valid until <date>"** (30 days, BR-126), item count, status (not ordered / partially ordered / fully ordered / expired). Free-text items marked "Not available in My Pharmacy" (BR-082). Delivered items are marked "Dispensed" and can't be ordered again (BR-127). An expired prescription shows ERR-27 with "New consultation" (EC-43).
 
 **S-12 Pharmacy results** [PRD]
 1. Location bar: "Using your location" or selected area, with "Change". GPS permission is requested only here, with a short explanation before the system prompt; on denial, show the area list immediately (BR-120). [D]
 2. Results as a **list** (no map by default, to save data [D]), sorted by distance, pharmacies with **all items first** (BR-121). Each card: name, distance, total price, items available (e.g. "3 of 4"), "Last updated" time (BR-122), "Stale data" tag after 48h (BR-134), pickup window (BR-097).
-3. Actions: Order all here / Buy available only / Split across pharmacies (BR-123).
+3. Actions: Order all here / Buy available only / Split across pharmacies (BR-123). **Split** is Should Have (FR-067); without it, "Buy available only" leaves the rest pending for a later order.
+4. If matching pharmacies exist but are all closed now, show ERR-26 with the earliest opening time, not the "no pharmacy" state (FR-070, EC-40).
 
 **S-13 Order status + pickup code** [PRD]
 Status timeline → after payment: **large pickup code** (short number + QR, max brightness hint), pharmacy name/address, pickup deadline. Must render offline (NFR-005). [PRD]
+- If the pharmacy didn't confirm in time, the code shows a calm note: "The pharmacy will check your payment at pickup" (BR-078). [PRD]
+- If the order has a Prescription-only item: "The pharmacy will ask the collector's name" (BR-128). [PRD]
 
 **S-05 My Account** [PRD]
-Profile (name, email, phone — BR-025) → Family members (add/edit) → Notifications settings → Logout. For a doctor-manager, a "Clinic Management" entry appears here. [C]
+Profile (name, email, phone — BR-025) → Family members (add/edit/remove; "Remove" archives the member, and the confirmation sheet says the history is kept — FR-017) → Notifications settings → Logout. For a doctor-manager, a "Clinic Management" entry appears here. [C]
 
 ### 4.2 Doctor
 
 **S-19 Cases** [C]
-Sorted by **urgency** (closest deadline first). Each item: member name, type (Message / Live), deadline countdown ("3h left to reply"), unread indicator. Segments: Needs reply / Open follow-up / Upcoming live sessions / Closed. [D]
+Sorted by **urgency** (closest deadline first). Each item: member name, type (Message / Live), deadline countdown ("3h left to reply"), unread indicator. Segments: Needs reply / Open follow-up / Upcoming live sessions / Closed. [D] Open follow-ups show the patient's remaining follow-ups (BR-048). The doctor can report a message from the conversation (FR-100).
 
 **S-20 Prescription editor** (opened from inside a conversation only) [C]
-Search the medicine list (Arabic or English) → pick form/strength → quantity → usage instructions → add more items → "Add item not in list" (free text, triggers an addition request — BR-082) → review → Issue. Issued prescriptions are read-only; "Cancel and reissue" only while no pharmacy order exists (BR-085).
+Search the medicine list (Arabic or English; Prescription-only items carry a badge, BR-128) → pick form/strength → quantity → usage instructions → add more items → "Add item not in list" (free text, triggers an addition request — BR-082) → review → Issue. Issued prescriptions are read-only; "Cancel and reissue" only while no pharmacy order exists (BR-085). The review step states that the prescription is valid for 30 days and each item is dispensed once (BR-126, BR-127).
 
 **S-21 Service settings** (inside My Account) [PRD]
 Message mode (Free / Paid + price / Off), live chat price + duration, in-person price.
@@ -251,23 +264,27 @@ Message mode (Free / Paid + price / Off), live chat price + duration, in-person 
 
 **S-17 Schedule** [PRD] — week view on desktop, day view on mobile [D]; slot type shown by color + label (Live chat / In-person, BR-066); removing a booked slot shows a warning that bookings will be cancelled with full refund (BR-068).
 
-**S-18 Payments** [PRD] — two lists: "Awaiting confirmation" (patient name, amount, wallet, transaction number, time; actions **Received** / **Not found**) and "Refunds to send" (amount, patient wallet, action **Refunded**). No medical content.
+**S-18 Payments** [PRD] — two lists: "Awaiting confirmation" (patient name, amount, wallet, transaction number, time, and a **2-hour countdown** — BR-076; actions **Received** / **Not found**) and "Refunds to send" (amount, patient wallet, action **Refunded**). No medical content.
 
-**S-15 Clinic registration wizard / S-16 Clinic Management** [PRD] — see §6.8.
+**S-15 Clinic registration wizard / S-16 Clinic Management** [PRD] — see §6.8. Each doctor needs a practice license **number** as well as the document (FR-002). Deactivating a doctor opens a confirmation sheet listing the consequences: future bookings cancelled with refunds, open consultations closed, issued prescriptions stay valid (FR-009).
 
 ### 4.4 Pharmacy
 
-**S-24 Orders** [C] — new orders first with a prominent **30-minute countdown** (counted in opening hours, BR-131); order shows items, quantities, prices, member name; actions Accept / Reject (reason required: Not available / Price changed / Other — BR-133); then payment confirmation (Received / Not found).
+**S-24 Orders** [C] — new orders first with a prominent **30-minute countdown** (counted in opening hours and paused while "Closed now" is on, BR-131, FR-075); order shows items, quantities, prices, member name, and a badge on Prescription-only items; actions Accept / Reject (reason required: Not available / Partial stock / Price changed / Other — BR-133; no partial accept); then payment confirmation (Received / Not found) with a **60-working-minute countdown** (BR-076).
 
 **Pickup tab** [C] — opens directly to **camera QR scan** with a "Enter code manually" field below; result shows order items and a single **"Mark as delivered"** button. Designed for one-handed use at the counter. [D]
+- If the order is **Payment unverified**, a banner above the button says "Check your wallet for this payment before handing over" (BR-078). [PRD]
+- If the order has a Prescription-only item, a required **collector's name** field appears above the button (BR-128, AC-47a). [PRD]
 
-**S-23 Inventory** [PRD] — searchable list of medicine-list items; each row: name (AR + EN), price input, available toggle. Sticky "Confirm today's prices" button that updates the "last updated" time even when nothing changed (BR-130). [D]
+**S-23 Inventory** [PRD] — searchable list of medicine-list items; each row: name (AR + EN), price input, available toggle. Sticky "Confirm today's prices" button that updates the "last updated" time even when nothing changed (BR-130). [D] A daily reminder at opening time deep-links here (BR-130).
 
-**S-25 Settings** (inside My Account) [PRD] — opening hours, pickup window, wallet IDs, and a prominent **"Closed now"** toggle.
+**S-25 Settings** (inside My Account) [PRD] — opening hours, pickup window, wallet IDs, and a prominent **"Closed now"** toggle. Turning it on explains that order countdowns pause until it is turned off (FR-075).
 
 ### 4.5 Admin (desktop-optimized)
 
-**Pending Tasks (home)** [C] — count cards: verification requests, medicine addition requests, overdue refunds, subscriptions due / in grace period. Each card opens its section.
+**Pending Tasks (home)** [C] — count cards: verification requests, medicine addition requests, overdue refunds, subscriptions due / in grace period, **payment flags** (reference conflicts BR-075, lapsed provider windows BR-078), **no-show blocks** (BR-063), and **reports** (shown only to Report Reviewers, FR-100). Each card opens its section.
+
+**Reports** [PRD] — visible only with the Report Reviewer permission. Shows only the reported messages and their attachments, with an "Access ends in N days" label (14 days) and a note that every view is logged (FR-100, SEC-13). Actions: Suspend account (FR-098) / Close report.
 
 **S-26..S-29** [PRD] — data tables with search, status filter, and a detail side panel (document viewer for licenses; approve / reject with **required reason**, FR-004). On mobile, tables collapse to cards. [D]
 
@@ -286,7 +303,7 @@ Message mode (Free / Paid + price / Off), live chat price + duration, in-person 
 | Phone, email, wallet IDs, transaction numbers and codes are entered and displayed **LTR** inside RTL layout. | [D] |
 | Long forms (registration wizards) split into steps with a progress indicator ("Step 2 of 4"); progress auto-saved locally. | [D] |
 | All drafts (messages, forms) survive app close and connection loss (NFR-004). | [PRD] |
-| Destructive or money-related actions (cancel booking, reject order, mark "Not found", remove booked slot) need a confirmation sheet stating the consequence (e.g. refund or no refund — UF-4). | [D] |
+| Destructive or money-related actions (cancel booking, withdraw a paid message, reject order, mark "Not found", remove booked slot, deactivate a doctor, remove a family member) need a confirmation sheet stating the consequence (e.g. refund or no refund — UF-4). | [D] |
 
 ### 5.2 Status timeline (waiting states) [C]
 
@@ -330,7 +347,8 @@ Each empty state has: one-line explanation + one primary action. Examples:
 |---|---|---|
 | My Consultations | No consultations yet. | Find a doctor |
 | My Pharmacy | Prescriptions from your doctor will appear here. | Find a doctor |
-| Pharmacy results | No open pharmacy has these items now. | Change area / Buy available only |
+| Pharmacy results (none has the items) | No nearby pharmacy has these items now (ERR-18). | Change area / Retry later |
+| Pharmacy results (all closed) | Pharmacies with these items are closed now; the first opens at <time> (ERR-26). | Retry later / Change area |
 | Doctor Cases | No cases waiting. | — |
 | Pharmacy Orders | No new orders. | Update inventory |
 | Home (filters) | No doctors match. | Clear filters |
@@ -339,7 +357,7 @@ Each empty state has: one-line explanation + one primary action. Examples:
 - Errors say **what happened + what to do**, in plain Arabic; no codes shown to users.
 - Inline field errors under the field; screen-level errors as a banner with Retry.
 - Error color + ⚠ icon + text, never color alone (§8).
-- PRD error cases (ERR-01..ERR-24) each need a written message in the copy deck.
+- PRD error cases (ERR-01..ERR-28) each need a written message in the copy deck.
 
 ### 6.4 Offline [C]
 - Thin persistent banner at the top: "No connection — showing saved data".
@@ -398,13 +416,13 @@ Steps: Account → Business details + map pin → Documents upload → Review & 
 | UI language | Arabic only, RTL (NG-12). | [PRD] |
 | Register | Simple Modern Standard Arabic with a warm, friendly tone; short sentences; no medical jargon in patient screens. | [D] |
 | Addressing | Gender-neutral phrasing where possible (e.g. imperative verbs avoided in favor of nouns: "إرسال" not "أرسلي/أرسل"). | [D] |
-| Numerals | **Western digits (0–9)** everywhere, consistently (prices, times, codes, transaction IDs) — matches wallet apps and reduces entry errors (NFR-002). | [D] |
+| Numerals | **Western digits (0–9)** everywhere, consistently (prices, times, codes, transaction IDs) — matches wallet apps and reduces entry errors. Arabic-Indic digits typed by users are accepted and converted (NFR-002). | [PRD] |
 | Currency | `₪` after the number, e.g. "30 ₪" (BR-077). | [D] |
 | Date/time | 12-hour clock with ص/م, Asia/Gaza time zone, relative dates for recent items ("today", "yesterday"). | [D] |
 | Medicine names | Arabic name primary, English name secondary below/after it in LTR (BR-088). | [PRD] |
 | Mixed direction | Wallet IDs, emails, phones, codes, English names isolated with `dir="ltr"` / Unicode isolation. | [D] |
 | Icons | Directional icons (back, next, progress arrows) mirrored for RTL; non-directional icons (search, camera, check) not mirrored. | [D] |
-| Copy deck | All strings (including ERR-01..24 messages and empty states) are maintained in one Arabic copy file reviewed by the product owner before build. | [D] |
+| Copy deck | All strings (including ERR-01..28 messages and empty states) are maintained in one Arabic copy file reviewed by the product owner before build. | [D] |
 
 ---
 
@@ -470,10 +488,11 @@ Calm, comfortable, and beautiful — **soft burgundy and dusty pink**.
 | UX-Q1 | Validate family-member model ([T], §3.3) in usability testing. | S-06, S-07, S-09, S-11 |
 | UX-Q2 | Confirm with thmanyah that web delivery (woff2) meets the license, and check Thmanyah + Readex Pro look balanced together on a sample screen (§10.3). | Visual design |
 | UX-Q3 | Final product name and logo (PRD Q-01). | Visual identity |
-| UX-Q4 | Payment confirmation deadline to show on S-08 (PRD Q-03). | S-08 copy |
+| UX-Q4 | ~~Payment confirmation deadline to show on S-08 (PRD Q-03).~~ Resolved by PRD v1.1: 30 min for the patient, 2 h for clinics, 60 working minutes for pharmacies (BR-076). | — |
 | UX-Q5 | Expired pickup outcome copy (PRD Q-04). | S-13 |
 | UX-Q6 | Whether pharmacies have multiple staff accounts (PRD Q-16) — affects Pickup/Orders concurrency UI. | S-24 |
 | UX-Q7 | Success / warning / info color values. | Visual design |
+| UX-Q8 | Where the "Report" action lives on mobile (long-press vs. ⋮ menu) and whether patients find it; test in usability sessions. | S-10 |
 
 ---
 
