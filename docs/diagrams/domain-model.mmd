@@ -25,7 +25,7 @@ flowchart LR
     Slot["Availability Slot<br/>live-chat or in-person time"]
     Service["Care Service<br/>any service performed through the platform"]
     Async["Async Consultation<br/>case + photos; 24h first reply; 72h follow-up"]
-    Live["Live Chat Session<br/>prepaid, fixed duration"]
+    Live["Live Chat Session<br/>free or prepaid (doctor's choice), fixed duration"]
     Visit["In-Person Appointment<br/>paid at the clinic; Completed or No-show"]
     Content["Medical Content<br/>messages and photos"]
   end
@@ -40,6 +40,7 @@ flowchart LR
 
   subgraph SAYD["Saydaliyati — Medicine Fulfilment"]
     Location["Patient Location<br/>GPS, or a chosen area as fallback"]
+    Area["Area<br/>predefined list of Gaza areas"]
     Stock["Pharmacy Stock Listing<br/>price + availability per medicine; last updated"]
     Order["Pharmacy Order<br/>accepted or rejected before payment"]
     Pickup["Pickup Code<br/>numeric + QR; anyone holding it may collect"]
@@ -47,14 +48,14 @@ flowchart LR
 
   subgraph MONEY["Payment Verification & Refunds"]
     PayClaim["Payment Claim<br/>wallet + transaction reference; Received or Not found"]
-    Refund["Refund Task<br/>clinic refunds directly, marks Refunded"]
+    Refund["Refund Task<br/>clinic or pharmacy refunds directly, marks Refunded"]
   end
 
   subgraph OPS["Platform Operations"]
     Admin["Platform Admin<br/>verifies partners, curates catalog, tracks subscriptions"]
     Sub["Partner Subscription<br/>Trial, Active, Grace, Hidden"]
     Report["Content Report<br/>abuse report on a message or consultation"]
-    ReviewTask["Admin Review Task<br/>reference conflicts, unverified payments"]
+    ReviewTask["Admin Review Task<br/>reference conflicts, unverified payments, refused refunds"]
   end
 
   %% Patients
@@ -110,7 +111,10 @@ flowchart LR
   Pharmacy -->|"publishes"| Stock
   Stock -->|"prices and stocks"| Catalog
   Location -->|"ranks by distance"| Pharmacy
+  Location -->|"falls back to a chosen"| Area
+  Pharmacy -->|"has a map pin and is assigned to an"| Area
   Holder -->|"places"| Order
+  Order -->|"draws from exactly one"| Rx
   Order -->|"fulfils items of"| RxItem
   Order -->|"is addressed to"| Pharmacy
   Order -->|"yields, once paid"| Pickup
@@ -125,13 +129,17 @@ flowchart LR
   Pharmacy -->|"verifies"| PayClaim
   Service -->|"may create"| Refund
   Clinic -->|"settles"| Refund
+  Order -->|"may create"| Refund
+  Pharmacy -->|"settles"| Refund
   PayClaim -.->|"conflict or no decision flagged to"| ReviewTask
-  Admin -.->|"resolves"| ReviewTask
+  Refund -->|"overdue or refused, escalated to"| ReviewTask
+  Admin -->|"follows up; may suspend the partner"| ReviewTask
 
   %% Operations
   Clinic -->|"holds"| Sub
   Pharmacy -->|"holds"| Sub
   Admin -->|"records payments for"| Sub
-  Holder -.->|"files"| Report
-  Doctor -.->|"files"| Report
+  Holder -->|"files"| Report
+  Doctor -->|"files"| Report
+  Admin -->|"reviews, only with Report Reviewer permission"| Report
   Report -.->|"exposes only the reported"| Content

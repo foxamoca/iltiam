@@ -4,7 +4,7 @@
 |---|---|
 | Status | Draft v1.0 |
 | Date | 2026-10-27 |
-| Sources | [PRD.md](../PRD.md) v1.1, [user-flow.md](../user-flow.md) |
+| Sources | [PRD.md](../PRD.md) v1.2, [user-flow.md](../user-flow.md) |
 | Diagram source | [domain-model.mmd](domain-model.mmd) |
 
 This is a **business** view of the product. It shows the main concepts, what each one is responsible for, which business area it belongs to, and how the concepts relate. It is not a database design, class diagram or API contract.
@@ -44,7 +44,7 @@ flowchart LR
     Slot["Availability Slot<br/>live-chat or in-person time"]
     Service["Care Service<br/>any service performed through the platform"]
     Async["Async Consultation<br/>case + photos; 24h first reply; 72h follow-up"]
-    Live["Live Chat Session<br/>prepaid, fixed duration"]
+    Live["Live Chat Session<br/>free or prepaid (doctor's choice), fixed duration"]
     Visit["In-Person Appointment<br/>paid at the clinic; Completed or No-show"]
     Content["Medical Content<br/>messages and photos"]
   end
@@ -59,6 +59,7 @@ flowchart LR
 
   subgraph SAYD["Saydaliyati — Medicine Fulfilment"]
     Location["Patient Location<br/>GPS, or a chosen area as fallback"]
+    Area["Area<br/>predefined list of Gaza areas"]
     Stock["Pharmacy Stock Listing<br/>price + availability per medicine; last updated"]
     Order["Pharmacy Order<br/>accepted or rejected before payment"]
     Pickup["Pickup Code<br/>numeric + QR; anyone holding it may collect"]
@@ -66,14 +67,14 @@ flowchart LR
 
   subgraph MONEY["Payment Verification & Refunds"]
     PayClaim["Payment Claim<br/>wallet + transaction reference; Received or Not found"]
-    Refund["Refund Task<br/>clinic refunds directly, marks Refunded"]
+    Refund["Refund Task<br/>clinic or pharmacy refunds directly, marks Refunded"]
   end
 
   subgraph OPS["Platform Operations"]
     Admin["Platform Admin<br/>verifies partners, curates catalog, tracks subscriptions"]
     Sub["Partner Subscription<br/>Trial, Active, Grace, Hidden"]
     Report["Content Report<br/>abuse report on a message or consultation"]
-    ReviewTask["Admin Review Task<br/>reference conflicts, unverified payments"]
+    ReviewTask["Admin Review Task<br/>reference conflicts, unverified payments, refused refunds"]
   end
 
   %% Patients
@@ -129,7 +130,10 @@ flowchart LR
   Pharmacy -->|"publishes"| Stock
   Stock -->|"prices and stocks"| Catalog
   Location -->|"ranks by distance"| Pharmacy
+  Location -->|"falls back to a chosen"| Area
+  Pharmacy -->|"has a map pin and is assigned to an"| Area
   Holder -->|"places"| Order
+  Order -->|"draws from exactly one"| Rx
   Order -->|"fulfils items of"| RxItem
   Order -->|"is addressed to"| Pharmacy
   Order -->|"yields, once paid"| Pickup
@@ -144,15 +148,19 @@ flowchart LR
   Pharmacy -->|"verifies"| PayClaim
   Service -->|"may create"| Refund
   Clinic -->|"settles"| Refund
+  Order -->|"may create"| Refund
+  Pharmacy -->|"settles"| Refund
   PayClaim -.->|"conflict or no decision flagged to"| ReviewTask
-  Admin -.->|"resolves"| ReviewTask
+  Refund -->|"overdue or refused, escalated to"| ReviewTask
+  Admin -->|"follows up; may suspend the partner"| ReviewTask
 
   %% Operations
   Clinic -->|"holds"| Sub
   Pharmacy -->|"holds"| Sub
   Admin -->|"records payments for"| Sub
-  Holder -.->|"files"| Report
-  Doctor -.->|"files"| Report
+  Holder -->|"files"| Report
+  Doctor -->|"files"| Report
+  Admin -->|"reviews, only with Report Reviewer permission"| Report
   Report -.->|"exposes only the reported"| Content
 ```
 
@@ -181,13 +189,13 @@ flowchart LR
 | Clinic Staff | Manages the schedule and confirms payments. Never sees medical content. | BR-065, BR-073, FR-031 [C] |
 | Pharmacy | Publishes price and availability, accepts or rejects orders, hands over against a pickup code. | BR-010, BR-089, BR-131 [C] |
 | Verification Application | Licence documents reviewed by the Admin before a partner is visible. | BR-003 – BR-005, BR-010 [C] |
-| Wallet Payment Identifier | Where patients send money. Clinic wallet [C] (BR-050); pharmacy identifiers [A] (BR-013). | BR-050, BR-013 |
+| Wallet Payment Identifier | Where patients send money. Clinic payments go to the clinic's wallet, not a doctor's (DM-1, owner 2026-10-27); pharmacy identifiers [A] (BR-013). | BR-050, BR-013 |
 | Working Hours & Closed Status | Defines when a pharmacy is shown and when its timers count. | BR-012 [A], FR-013 [A] |
 | Service Offering | A doctor's terms: async Free / Paid / Disabled, live-chat price and duration, in-person price. | BR-031, BR-040, BR-051 [C] |
 | Availability Slot | A bookable time, typed as live chat or in-person. | BR-065 [C], BR-066 [A] |
 | Care Service | Any service performed through the platform. It is the only basis for a prescription. | BR-080 [C] |
 | Async Consultation | Case with photos; 24h first-reply deadline; 72h follow-up window. | BR-041 – BR-046 [C] |
-| Live Chat Session | Prepaid, scheduled real-time chat. Becomes async if the patient doesn't join in 15 minutes. | BR-050 – BR-053 [C] |
+| Live Chat Session | Scheduled real-time chat, free or prepaid as the doctor chooses. Becomes async if the patient doesn't join in 15 minutes. | BR-050 – BR-053 [C]; DM-7 (owner 2026-10-27) overrides BR-056 |
 | In-Person Appointment | Clinic visit paid at the clinic. Prescribing only after it is Completed. | BR-060 [C], FR-042 |
 | Medical Content | Messages and photos. Visible to the patient and the treating doctor only. | UN-12, FR-031 [C]; FR-100 [D] |
 | E-Prescription | Issued by a doctor after a care service. Cannot be edited. | BR-080, BR-081 [C]; BR-085 [A] |
@@ -196,14 +204,15 @@ flowchart LR
 | Catalog Medicine | Unified dermatology medicine, Arabic and English name, managed by Admin only. | BR-086 – BR-088 [C] |
 | Catalog Addition Request | Created from a free-text item; approved or rejected by the Admin. | BR-082, FR-061 [C] |
 | Patient Location | GPS, or a chosen area when GPS fails; used to rank pharmacies by distance. | BR-120, BR-121 [C] |
+| Area | An entry in the predefined list of Gaza areas. Each pharmacy has a map pin and is assigned to one area, so an area search finds that area's pharmacies. | BR-120 [C]; DM-8 (owner 2026-10-27) |
 | Pharmacy Stock Listing | One pharmacy's price and availability for one catalog medicine, with "last updated". | BR-089, BR-122 [C] |
-| Pharmacy Order | Request to one pharmacy for some prescription items. Patient pays only after acceptance. | BR-123, BR-131, BR-132 [C] |
+| Pharmacy Order | Request to one pharmacy for some items of exactly one prescription. Patient pays only after acceptance. If it is cancelled for a stock-out after payment, its items return to Pending. | BR-123, BR-131, BR-132 [C]; DM-4 (owner 2026-10-27) |
 | Pickup Code | Numeric + QR code issued after payment. Anyone holding it may collect. | BR-095, BR-096 [C] |
 | Payment Claim | The wallet and transaction reference a patient enters; marked Received or Not found. | BR-072, BR-073 [C] |
-| Refund Task | Obligation on the clinic to refund directly and mark it Refunded. | BR-090 – BR-093, BR-043 [C] |
-| Partner Subscription | Trial, then monthly; Grace, then Hidden from new patients. | BR-111, BR-113, FR-091 [C] |
-| Content Report | Abuse report that exposes only the reported messages to a Report Reviewer. | FR-100 [D] |
-| Admin Review Task | Exceptions sent to the Admin: reference conflicts, providers who did not decide in time. | BR-075, BR-078 [D] |
+| Refund Task | Obligation on the clinic or pharmacy to refund directly and mark it Refunded. A pharmacy refunds in full when it finds a stock-out after payment, or when a paid order expires uncollected. | BR-090 – BR-093, BR-043 [C]; DM-5 (owner 2026-10-27) |
+| Partner Subscription | One per clinic (not per doctor) or per pharmacy. The trial starts on Admin approval (BR-115). Trial, then monthly; Grace, then Hidden from new patients. | BR-111, BR-113, FR-091 [C]; DM-2 (owner 2026-10-27) |
+| Content Report | Abuse report that exposes only the reported messages to a Report Reviewer. All Admins share the same permissions except Report Reviewer, which only named Admins hold. | FR-100 [D]; DM-9 (owner 2026-10-27) |
+| Admin Review Task | Exceptions sent to the Admin: reference conflicts, providers who did not decide in time, overdue or refused refunds. For a refused refund the Admin follows up and may suspend the partner. | BR-075, BR-078 [D]; FR-087 [A]; DM-6 (owner 2026-10-27) |
 
 Notifications and audit records are cross-cutting. They touch almost every concept, so the diagram leaves them out to stay readable (F-16, NFR-011).
 
@@ -211,14 +220,14 @@ Notifications and audit records are cross-cutting. They touch almost every conce
 
 | # | Question | Why it matters to the model | PRD ref |
 |---|---|---|---|
-| DM-1 | Is the wallet owned by the clinic, or can each doctor receive payments in their own wallet? | Decides whether Wallet links to Clinic only, or to Doctor too. | BR-050, FR-047 |
-| DM-2 | Is a subscription per clinic, or per doctor inside a clinic? | Decides who holds a Partner Subscription. | Q-06 |
-| DM-3 | Does a pharmacy have one account, or several staff users? | May add a "Pharmacy Staff" concept. | Q-16 |
-| DM-4 | Can one pharmacy order cover items from more than one prescription? | Changes the Order ↔ Prescription relationship. | Not covered |
-| DM-5 | When a paid pharmacy order expires or the pharmacy finds a stock-out after payment, does the pharmacy owe a refund? | Today Refund Task is linked to clinics only. | Q-04, Q-09 |
-| DM-6 | What does the Admin do when a clinic or pharmacy refuses to refund, or a payment is disputed? | May add a "Dispute" concept. | Q-08 |
-| DM-7 | Can live chat ever be free? | Decides whether every Live Chat Session needs a Payment Claim. | Q-07 |
-| DM-8 | Are pharmacies linked to the predefined areas, or only located by map pin? | Decides whether "Area" is its own concept. | BR-120 |
-| DM-9 | Is the Admin one role, or several permissions (verification, catalog, Report Reviewer)? | May split Platform Admin into roles. | FR-100 |
+| DM-1 | Is the wallet owned by the clinic, or can each doctor receive payments in their own wallet? **Answered 2026-10-27:** the clinic's wallet. | Wallet links to Clinic only. | BR-050, FR-047 |
+| DM-2 | Is a subscription per clinic, or per doctor inside a clinic? **Answered 2026-10-27:** per clinic. | The clinic holds the subscription. | Q-06 |
+| DM-3 | Does a pharmacy have one account, or several staff users? **Answered 2026-10-27:** one account. | No "Pharmacy Staff" concept. | Q-16 |
+| DM-4 | Can one pharmacy order cover items from more than one prescription? **Answered 2026-10-27:** no, one prescription per order. | Order draws from exactly one prescription. | Not covered |
+| DM-5 | When a paid pharmacy order expires or the pharmacy finds a stock-out after payment, does the pharmacy owe a refund? **Answered 2026-10-27:** yes, a full refund in both cases. | Refund Task now links to pharmacies too. | Q-04, Q-09 |
+| DM-6 | What does the Admin do when a clinic or pharmacy refuses to refund, or a payment is disputed? **Answered 2026-10-27:** for a refused refund, the Admin follows up and may suspend the partner. Payment disputes are settled directly between patient and provider; the platform only shows each side the other's phone number. | Refused refunds go to Admin Review Task. No "Dispute" concept. | Q-08, BR-079 |
+| DM-7 | Can live chat ever be free? **Answered 2026-10-27:** yes, the doctor chooses. This overrides BR-056. | A free Live Chat Session has no Payment Claim. | Q-07 |
+| DM-8 | Are pharmacies linked to the predefined areas, or only located by map pin? **Answered 2026-10-27:** both: a map pin and an assigned area. | "Area" is its own concept. | BR-120 |
+| DM-9 | Is the Admin one role, or several permissions (verification, catalog, Report Reviewer)? **Answered 2026-10-27:** one role; only Report Reviewer is a separate permission. | Platform Admin stays one concept. | FR-100 |
 | DM-10 | What are the legal rules for e-prescriptions, prescription-only medicines and who may see medical content? | Dashed links (Content Report, prescription validity) may change. | Q-10, Q-14 |
 | DM-11 | How long is medical history kept after a family member is removed? | Affects the lifecycle of Family Member and Medical Content. | Q-11 |
