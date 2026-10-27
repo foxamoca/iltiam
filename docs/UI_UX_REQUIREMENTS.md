@@ -430,10 +430,19 @@ Calm, comfortable, and beautiful — **soft burgundy and dusty pink**.
 - Flat colors in the app UI. Gradients/textures are limited to splash/marketing surfaces and must be CSS-only (no image backgrounds) to protect NFR-003. [D]
 - Dark mode: **not in MVP**; tokens are defined so it can be added later. [D]
 
-### 10.3 Typography [D]
-- The product owner rejected IBM Plex Sans Arabic, Tajawal, and Cairo.
-- **Recommendation:** **Readex Pro** for all UI text (Arabic + Latin in one family, designed for readability, variable font, free on Google Fonts). Optional: **Alexandria** for large headings only, if the designer wants more character. Requires product owner sign-off on a sample screen.
-- Constraints for any final choice: Arabic + Latin support, legible at 14px, free license, self-hosted and subset, ≤ 2 weights loaded (Regular + SemiBold), `font-display: swap`.
+### 10.3 Typography [C]
+- The product owner rejected IBM Plex Sans Arabic, Tajawal, and Cairo, and chose the **Thmanyah** family (ثمانية).
+- **UI text:** **Thmanyah Sans** for all body text, labels, buttons, and numbers. Weights loaded: Regular + Bold (the family has Light, Regular, Medium, Bold, Black).
+- **Display:** **Thmanyah Serif Display** for the splash/welcome screen and large headings only. Its kashida and calligraphic shapes hurt legibility at small sizes, so it is never used below heading size, in forms, or for medicine names.
+- **Thmanyah Serif Text** is not used in the app UI.
+- Format: `woff2` for web, `otf` for native builds. Self-hosted and subset, `font-display: swap`.
+- **Latin text** (English UI, medicine names, Latin-script numbers in English mode): **Readex Pro**, as previously agreed. Two weights (Regular + SemiBold, chosen to visually match Thmanyah Regular + Bold), self-hosted and subset to Latin.
+- Implementation: one font stack where Thmanyah is subset to the Arabic range and Readex Pro to the Latin range (`unicode-range`), so mixed text such as an Arabic sentence with an English medicine name picks the right font per character.
+
+**License** (thmanyah's Font License, 2026; source: `Thmanyah-Font-Family.zip` from thmanyah.com):
+- Allowed: commercial use, and embedding in websites, web apps, and mobile apps **only as part of a compiled, packaged, or obfuscated product**.
+- Not allowed: redistributing, uploading, or hosting the font files anywhere they can be downloaded (including a public repository); letting end users extract the font files from the product; modifying the font; using the "thmanyah" name or brand in a way that suggests endorsement.
+- Consequence for the project: font files are **not committed to the repository** (add them to `.gitignore`) and are added to the build locally. The web build must not expose the raw font files for direct download beyond what normal page rendering requires; check with ask@thmanyah.com if the web delivery method is unclear.
 
 ### 10.4 Shape & spacing [D]
 - Rounded corners: 12px cards, 10px buttons/inputs, full-pill chips.
@@ -459,7 +468,7 @@ Calm, comfortable, and beautiful — **soft burgundy and dusty pink**.
 | # | Question | Blocks |
 |---|---|---|
 | UX-Q1 | Validate family-member model ([T], §3.3) in usability testing. | S-06, S-07, S-09, S-11 |
-| UX-Q2 | Final font approval (Readex Pro recommendation, §10.3). | Visual design |
+| UX-Q2 | Confirm with thmanyah that web delivery (woff2) meets the license, and check Thmanyah + Readex Pro look balanced together on a sample screen (§10.3). | Visual design |
 | UX-Q3 | Final product name and logo (PRD Q-01). | Visual identity |
 | UX-Q4 | Payment confirmation deadline to show on S-08 (PRD Q-03). | S-08 copy |
 | UX-Q5 | Expired pickup outcome copy (PRD Q-04). | S-13 |
@@ -490,5 +499,5 @@ Calm, comfortable, and beautiful — **soft burgundy and dusty pink**.
 | 16 | Offline | Thin banner + auto-send queue; pickup code stays visible | [C] |
 | 17 | Brand | No existing identity; ideas only | [C] |
 | 18 | Mood & colors | Soft burgundy + dusty pink; palette from reference image | [C] |
-| 19 | Font | Readex Pro recommended (owner rejected Plex / Tajawal / Cairo) | [D] |
+| 19 | Font | Arabic: Thmanyah Sans for UI, Thmanyah Serif Display for large headings. Latin: Readex Pro (owner rejected Plex / Tajawal / Cairo) | [C] |
 | 20 | Everything else (forms, states, responsive, a11y, language, numerals) | Delegated to UX recommendations | [D] |

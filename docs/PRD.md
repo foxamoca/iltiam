@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Document status | Draft v1.0 — ready for stakeholder review |
-| Date | 2026-10-15 |
+| Document status | Draft v1.1 — PRD review findings applied (see §26.1, QR-11 – QR-20) |
+| Date | 2026-10-15 (v1.0) · 2026-10-27 (v1.1) |
 | Source | Grill Me discovery interview (35 questions, Arabic), conducted 2026-10-13 → 2026-10-15 |
 | Product type | Web application + installable PWA (multi-sided marketplace) |
 | Launch market | Gaza Strip, Palestine |
@@ -17,7 +17,7 @@ Every requirement and rule carries a source tag:
 |---|---|
 | **[C]** | **Confirmed** — explicitly answered by the product owner during the interview. |
 | **[A]** | **Assumption** — inferred by the PM/BA to make the requirement complete and testable. Must be validated (see §26). |
-| **[D]** | **Delegated** — the product owner asked the PM to choose ("choose the best"). Treated as a recommendation, changeable without product impact. |
+| **[D]** | **Delegated** — the product owner asked the PM to choose ("choose the best"). Treated as a recommendation, changeable without product impact. In v1.1 the owner also delegated the fixes from the PRD review (QR-11 – QR-20). Those rules are tagged [D], may have product impact, and stay open to owner override. |
 
 Where the interview was re-started, the **latest answer prevails** (see §26.1 for superseded answers).
 
@@ -179,14 +179,14 @@ Out of scope for the MVP. Some may come in later phases (§24).
 | 6 | Clinic self-registration, document upload, admin approval | [C] |
 | 7 | Clinic Manager adds doctors (admin-approved) and staff | [C] |
 | 8 | Pharmacy self-registration, document upload, admin approval | [C] |
-| 9 | Async message consultation (free, paid, or disabled per doctor; 24h SLA; 72h follow-up window) | [C] |
-| 10 | Booked live text consultation (prepaid; doctor-defined duration; 15-min wait rule) | [C] |
+| 9 | Async message consultation (free, paid, or disabled per doctor; 24h SLA; 72h follow-up window with up to 3 patient follow-ups) | [C]/[D] |
+| 10 | Booked live text consultation (prepaid; doctor-defined duration; 15-min wait rule) — **Should Have**, first to cut (QR-17) | [C]/[D] |
 | 11 | In-person appointment booking (paid at clinic) | [C] |
 | 12 | Schedule management by doctor or clinic staff | [C] |
 | 13 | Manual payment verification: patient enters wallet transaction reference, provider confirms | [C] |
 | 14 | E-prescription from unified dermatology catalog + free-text items + "add to catalog" request | [C] |
 | 15 | Saydaliyati: GPS location (primary) or area selection (fallback); pharmacies by distance; price and last-updated | [C] |
-| 16 | Partial availability: split across pharmacies, or buy available items and defer the rest | [C] |
+| 16 | Partial availability: buy available items and defer the rest (Must Have); split across pharmacies (**Should Have**, first to cut — QR-17) | [C]/[D] |
 | 17 | Pharmacy order confirmation within 30 min of working hours; auto-cancel otherwise | [C] |
 | 18 | Pickup code (numeric + QR); pickup window set per pharmacy; daily reminders | [C] |
 | 19 | Cancellation policy (24h rule) with manual refund marking | [C] |
@@ -214,7 +214,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | F-03 | Patient Account & Family Members | Must Have |
 | F-04 | Guest Browsing & Doctor Discovery | Must Have |
 | F-05 | Async Message Consultation | Must Have |
-| F-06 | Booked Live Text Consultation | Must Have |
+| F-06 | Booked Live Text Consultation | Should Have (QR-17) |
 | F-07 | In-Person Appointment Booking | Must Have |
 | F-08 | Schedule Management | Must Have |
 | F-09 | Manual Payment Verification | Must Have |
@@ -244,12 +244,13 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | BR-003 | Clinic registration requires: a clinic license, a written address + map pin, and for each doctor a medical practice license and a dermatology specialty certificate. | [C] |
 | BR-004 | A clinic is invisible to patients until a Platform Admin approves it. | [C] |
 | BR-005 | Doctors added later by the Clinic Manager are invisible to patients until a Platform Admin approves their documents. | [C] |
-| BR-006 | A doctor belongs to only one clinic in the MVP. | [A] |
+| BR-006 | A doctor belongs to only one clinic in the MVP, enforced by a unique practice license number. | [A] |
 | BR-007 | Rejection must include a reason visible to the applicant; the applicant may correct and resubmit. | [A] |
+| BR-008 | A Clinic Manager may also hold the Doctor role on the same account, which one-doctor private clinics need. Medical content is reachable only through the Doctor role, for that doctor's own consultations. | [D] Resolves Q-15 |
 
-- **Edge cases:** EC-01 – EC-04
+- **Edge cases:** EC-01 – EC-04, EC-42
 - **Error states:** ERR-01, ERR-02, ERR-03
-- **Acceptance criteria:** AC-01 – AC-05
+- **Acceptance criteria:** AC-01 – AC-05, AC-05a
 - **Priority:** Must Have
 
 ### F-02 — Pharmacy Onboarding and Verification
@@ -287,7 +288,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | BR-024 | Email must be verified before the first paid or booked service. | [A] |
 | BR-025 | A mobile phone number is collected on the profile so clinics and pharmacies can contact the patient. | [A] |
 
-- **Edge cases:** EC-06, EC-07
+- **Edge cases:** EC-06, EC-07, EC-46
 - **Error states:** ERR-04, ERR-05
 - **Acceptance criteria:** AC-08 – AC-10
 - **Priority:** Must Have
@@ -320,16 +321,18 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 |---|---|---|
 | BR-040 | Each doctor sets async messaging to Free (default), Paid (doctor-defined price), or Disabled. | [C] |
 | BR-041 | The doctor must send a first response within 24 hours. | [C] |
-| BR-042 | Paid async: the 24h clock starts when the clinic confirms payment (F-09). Free async: it starts when the message is sent. | [A] |
+| BR-042 | Paid async: the 24h clock starts when the clinic confirms payment (F-09), or automatically when the provider window of BR-076 ends without a decision, whichever comes first. Free async: it starts when the message is sent. | [A]/[D] (QR-13) |
 | BR-043 | If the doctor does not respond within 24h, the patient is notified and may consult another doctor. If the message was paid, the clinic must refund the patient. | [C] |
 | BR-044 | After the doctor's first response, the thread stays open 72 hours for follow-ups. The doctor may close it earlier. After closure, any new question is a new consultation. | [C] |
 | BR-045 | Messages are delivered in real time. If both parties are online, the thread behaves like a live chat. | [C] |
 | BR-046 | Patients can attach photos to a message. | [C] |
 | BR-047 | Photo limits: max 5 images per message, max 10 MB each, JPEG/PNG/HEIC. | [A] |
+| BR-048 | During the 72h follow-up window the patient may send up to **3 follow-up messages** (photos allowed). The doctor's replies are not limited. Open-ended real-time conversation is the paid live chat (F-06). | [D] (QR-11) |
+| BR-049 | The patient may withdraw a paid async case, with a full refund, until the doctor first opens it. After that it cannot be withdrawn. | [D] (QR-19) |
 
-- **Edge cases:** EC-09 – EC-12
-- **Error states:** ERR-07 – ERR-09
-- **Acceptance criteria:** AC-12 – AC-17
+- **Edge cases:** EC-09 – EC-12, EC-47
+- **Error states:** ERR-07 – ERR-09, ERR-25
+- **Acceptance criteria:** AC-12 – AC-17, AC-16a, AC-17a
 - **Priority:** Must Have
 
 ### F-06 — Booked Live Text Consultation
@@ -348,11 +351,12 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | BR-054 | If the doctor doesn't join within 15 minutes, the patient chooses between rebooking and a full refund. | [C] |
 | BR-055 | The chat closes when the session duration ends. Post-session follow-up uses the 72h rule of BR-044. | [A] |
 | BR-056 | Live chat is always paid; doctors cannot offer it for free. | [A] Needs confirmation (Q-07) |
+| BR-057 | If a session converted to async under BR-053 gets no doctor response within 24h, BR-043 applies: the clinic refunds the patient in full. | [D] (QR-12) |
 
-- **Edge cases:** EC-13 – EC-15
+- **Edge cases:** EC-13 – EC-15, EC-41
 - **Error states:** ERR-10, ERR-11
-- **Acceptance criteria:** AC-18 – AC-21
-- **Priority:** Must Have
+- **Acceptance criteria:** AC-18 – AC-21, AC-19a
+- **Priority:** Should Have. First feature to cut if the timeline slips: async messages already arrive in real time (BR-045), within the follow-up limit of BR-048 (QR-17).
 
 ### F-07 — In-Person Appointment Booking
 
@@ -366,10 +370,11 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | BR-060 | In-person visits are paid at the clinic. The platform collects no payment for them. | [C] |
 | BR-061 | An in-person booking is confirmed immediately on slot selection, since no prepayment is needed. | [A] |
 | BR-062 | Clinic staff or the doctor can mark an in-person visit as Completed or No-show. | [A] |
+| BR-063 | Each patient of record may hold at most one active in-person booking per doctor. An account with 3 no-shows in 90 days cannot book in-person visits for 30 days; the Admin can lift the block. | [D] (QR-19) |
 
 - **Edge cases:** EC-16
-- **Error states:** ERR-10
-- **Acceptance criteria:** AC-22, AC-23
+- **Error states:** ERR-10, ERR-28
+- **Acceptance criteria:** AC-22, AC-23, AC-23a
 - **Priority:** Must Have
 
 ### F-08 — Schedule Management
@@ -405,13 +410,14 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | BR-072 | The patient pays outside the platform, then enters the **transaction reference number** in the platform. | [C] |
 | BR-073 | The receiving party (doctor or Clinic Staff for clinics; the pharmacy for orders) checks its wallet and marks the payment **Received** or **Not found**. | [C] |
 | BR-074 | Receipt images are not used. | [C] |
-| BR-075 | A transaction reference can be used only once across the platform. | [A] |
-| BR-076 | If payment is not confirmed within the payment-confirmation window, the held slot or order is released. The window length is an open question (Q-03). | [A] |
+| BR-075 | A transaction reference can be used only once **per wallet provider** (wallet + reference is unique). If a patient's reference is rejected as already used, they can flag "this is my payment", which creates an Admin review task. | [A]/[D] (QR-19) |
+| BR-076 | Payment has two windows (resolves Q-03). **(a) Patient window:** the patient must submit the reference within **30 minutes** of holding a slot or of the pharmacy's acceptance; otherwise the hold is released. **(b) Provider window:** after the reference is submitted, the clinic must mark Received / Not found within **2 hours**, and the pharmacy within **60 minutes counted during its working hours**. For live-chat slots, the clinic must also decide before the session starts. | [D] (QR-13) |
 | BR-077 | Payment amounts and currency are shown in Israeli Shekel (ILS / ₪). | [A] |
+| BR-078 | If the provider window ends without a decision, the patient is protected: a paid async case is delivered and its 24h clock starts; a live-chat booking is Confirmed; a pharmacy order gets its pickup code marked "Payment unverified", and the pharmacy checks its wallet at the counter before handing over. Each case is flagged to the Admin. | [D] (QR-13) |
 
-- **Edge cases:** EC-18 – EC-21
+- **Edge cases:** EC-18 – EC-21, EC-45
 - **Error states:** ERR-13 – ERR-15
-- **Acceptance criteria:** AC-26 – AC-29
+- **Acceptance criteria:** AC-26 – AC-29, AC-29a, AC-29b
 - **Priority:** Must Have
 
 ### F-10 — E-Prescription
@@ -469,10 +475,13 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | BR-123 | If no single pharmacy has all items, the patient may either **split** the order across several pharmacies or **buy the available items** from one pharmacy and leave the rest pending on the prescription. | [C] |
 | BR-124 | Pharmacies outside working hours, or hidden for non-payment, are not shown. | [C] |
 | BR-125 | Free-text (non-catalog) items are never matched to pharmacies. | [C] |
+| BR-126 | A prescription is valid for **30 days** from issue. After that its pending items cannot be ordered and the patient needs a new consultation. | [D] (QR-16) — pending legal confirmation (Q-14) |
+| BR-127 | Each prescription item can be dispensed **once** (no refills in the MVP). An item is locked while it is in an active order, and returns to "Pending" only if that order is rejected, auto-cancelled, or cancelled before payment. | [D] (QR-16) |
+| BR-128 | Catalog items carry a **Prescription-only** flag set by the Admin. For these items the pharmacy records the collector's name at pickup and checks that the order matches the patient of record shown. | [D] (QR-16) — pending legal confirmation (Q-14) |
 
-- **Edge cases:** EC-25 – EC-28
-- **Error states:** ERR-18, ERR-19
-- **Acceptance criteria:** AC-35 – AC-39
+- **Edge cases:** EC-25 – EC-28, EC-40, EC-43, EC-44
+- **Error states:** ERR-18, ERR-19, ERR-26, ERR-27
+- **Acceptance criteria:** AC-35 – AC-39, AC-39a – AC-39c
 - **Priority:** Must Have
 
 ### F-13 — Pharmacy Inventory & Order Confirmation
@@ -484,15 +493,15 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 
 | ID | Rule | Src |
 |---|---|---|
-| BR-130 | Pharmacies update price and availability **daily**. | [C] |
+| BR-130 | Pharmacies are expected to update price and availability **daily**. The system sends a daily update reminder at opening time and applies the "outdated" badge of BR-134. | [C]/[D] (QR-18) |
 | BR-131 | The pharmacy must accept or reject an order within **30 minutes, counted during its working hours**. Otherwise the order is auto-cancelled and the patient may choose another pharmacy. | [C] |
 | BR-132 | The patient pays **only after** the pharmacy accepts. The accepted price is the price to pay. | [C] |
-| BR-133 | When rejecting, a pharmacy selects a reason: out of stock, price changed, or other. | [A] |
+| BR-133 | When rejecting, a pharmacy selects a reason: out of stock, partial stock, price changed, or other. Partial acceptance is not supported in the MVP; after a "partial stock" rejection the patient can re-order a subset (FR-068). | [A]/[D] (QR-19) |
 | BR-134 | If price or availability has not been updated for more than 48h, the pharmacy is flagged as "outdated" to patients. | [A] |
 
-- **Edge cases:** EC-29 – EC-32
+- **Edge cases:** EC-29 – EC-32, EC-39
 - **Error states:** ERR-20, ERR-21
-- **Acceptance criteria:** AC-40 – AC-44
+- **Acceptance criteria:** AC-40 – AC-44, AC-41a
 - **Priority:** Must Have
 
 ### F-14 — Order Pickup
@@ -512,7 +521,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 
 - **Edge cases:** EC-33, EC-34
 - **Error states:** ERR-22
-- **Acceptance criteria:** AC-45 – AC-47
+- **Acceptance criteria:** AC-45 – AC-47, AC-47a
 - **Priority:** Must Have
 
 ### F-15 — Cancellations & Refunds
@@ -575,9 +584,9 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 
 - **Purpose:** operate the marketplace.
 - **User stories:** US-22, US-23, US-24
-- **Functional requirements:** FR-095 – FR-099
+- **Functional requirements:** FR-095 – FR-100
 - **Business rules:** BR-004, BR-005, BR-087, BR-113, BR-114
-- **Acceptance criteria:** AC-01 – AC-05, AC-33, AC-52
+- **Acceptance criteria:** AC-01 – AC-05, AC-33, AC-52, AC-53a
 - **Priority:** Must Have
 
 ---
@@ -588,14 +597,14 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | ID | Requirement | Src |
 |---|---|---|
 | FR-001 | The system shall allow a Clinic Manager to self-register a clinic with name, address, map pin, phone, and clinic license document. | [C] |
-| FR-002 | The system shall require, for each doctor, a practice license and a dermatology specialty certificate. | [C] |
+| FR-002 | The system shall require, for each doctor, a practice license (document and license number, unique across the platform) and a dermatology specialty certificate. | [C]/[A] |
 | FR-003 | The system shall set new clinics and doctors to status **Pending Review** and hide them from patients. | [C] |
 | FR-004 | The system shall allow a Platform Admin to view the uploaded documents and Approve or Reject, with a mandatory rejection reason. | [C]/[A] |
 | FR-005 | The system shall notify the applicant of approval or rejection. | [A] |
 | FR-006 | The system shall allow a rejected applicant to edit and resubmit. | [A] |
 | FR-007 | The system shall allow an approved Clinic Manager to invite doctors and Clinic Staff by email. | [C] |
 | FR-008 | The system shall keep a newly added doctor hidden until the Admin approves their documents. | [C] |
-| FR-009 | The system shall allow a Clinic Manager to deactivate a doctor or staff member. Deactivating a doctor requires handling their future bookings (BR-068). | [A] |
+| FR-009 | The system shall allow a Clinic Manager to deactivate a doctor or staff member. Deactivating a doctor (1) cancels their future bookings as clinic cancellations (BR-068, BR-092); (2) closes their open async and live consultations, notifies the patients, and creates a refund task for each paid consultation not yet answered; (3) keeps already-issued prescriptions valid in Saydaliyati. Transferring consultations to another doctor is out of scope for the MVP. | [A]/[D] (QR-15) |
 
 ### F-02 Pharmacy Onboarding
 | ID | Requirement | Src |
@@ -611,7 +620,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | FR-014 | The system shall allow registration with email + password and email verification. | [C]/[A] |
 | FR-015 | The system shall provide login, logout, and password reset by email. | [A] |
 | FR-016 | The system shall require the account holder to confirm they are 18+. | [C] |
-| FR-017 | The system shall allow the account holder to add, edit, and remove family members (name, date of birth, sex, relationship). | [C]/[A] |
+| FR-017 | The system shall allow the account holder to add, edit, and remove family members (name, date of birth, sex, relationship). Removing a member archives it: it no longer appears for new services, and its medical history is kept under the retention policy (Q-11). | [C]/[A]/[D] (QR-19) |
 | FR-018 | The system shall require selecting the patient of record (self or a family member) for every consultation, booking, and order. | [C] |
 | FR-019 | The system shall show the account holder each family member's history separately. | [A] |
 
@@ -633,6 +642,8 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | FR-028 | The system shall show the patient the response deadline (24h). | [A] |
 | FR-029 | The system shall, at 24h without a doctor response, mark the consultation **Expired – No response**, notify the patient, and, if paid, create a refund obligation for the clinic. | [C] |
 | FR-030 | The system shall close the thread automatically 72h after the doctor's first response, and allow the doctor to close it earlier. | [C] |
+| FR-030a | The system shall show the patient how many follow-up messages remain (BR-048) and, at zero, disable input with options to book a live chat or start a new consultation (ERR-25). | [D] |
+| FR-030b | The system shall let the patient withdraw a paid async case before the doctor opens it, and create a refund task (BR-049). | [D] |
 | FR-031 | The system shall not show medical content (text, photos) to Clinic Staff. | [C] |
 
 ### F-06 Live Chat
@@ -667,10 +678,10 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 |---|---|---|
 | FR-047 | The system shall show the patient the amount, the recipient's wallet identifier(s), and instructions. | [C]/[A] |
 | FR-048 | The system shall require the patient to enter the transaction reference number and the wallet used. | [C] |
-| FR-049 | The system shall reject a reference number already used on the platform. | [A] |
+| FR-049 | The system shall reject a reference number already used with the same wallet provider, and let the patient flag the conflict for Admin review (BR-075). | [A]/[D] |
 | FR-050 | The system shall present pending payments to the recipient (doctor or Clinic Staff, or the pharmacy), with Received / Not found actions. | [C] |
 | FR-051 | On **Not found**, the system shall notify the patient and allow them to correct the reference once more before the hold is released. | [A] |
-| FR-052 | The system shall release the held slot or order if not confirmed within the payment-confirmation window (Q-03). | [A] |
+| FR-052 | The system shall release the held slot or order when the patient window ends without a reference, and apply BR-078 when the provider window ends without a decision (BR-076). | [D] |
 | FR-053 | The system shall log who confirmed each payment and when. | [A] |
 
 ### F-10 E-Prescription
@@ -686,7 +697,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 ### F-11 Catalog
 | ID | Requirement | Src |
 |---|---|---|
-| FR-060 | The system shall allow the Admin to create, edit, and deactivate catalog items (AR name, EN name, form, strength). | [C]/[A] |
+| FR-060 | The system shall allow the Admin to create, edit, and deactivate catalog items (AR name, EN name, form, strength, Prescription-only flag). | [C]/[A]/[D] |
 | FR-061 | The system shall list catalog-addition requests to the Admin with Approve/Reject. | [C] |
 | FR-062 | The system shall prevent duplicate items with the same EN name + form + strength. | [A] |
 | FR-063 | The system shall keep deactivated items on existing prescriptions but hide them from new prescriptions. | [A] |
@@ -697,10 +708,10 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | FR-064 | The system shall request GPS location and fall back to area selection. | [C] |
 | FR-065 | The system shall list open, visible pharmacies with distance, total price for the available items, availability per item, and last-updated time. | [C] |
 | FR-066 | The system shall rank pharmacies with full availability first, each group by distance. | [C] |
-| FR-067 | The system shall allow the patient to build a split order (one sub-order per pharmacy). | [C] |
-| FR-068 | The system shall allow the patient to order a subset of items and keep the remaining items "Pending" on the prescription. | [C] |
+| FR-067 | The system shall allow the patient to build a split order (one sub-order per pharmacy). **Should Have**, first to cut (QR-17): without it, the patient can still reach the same result in steps through FR-068. | [C]/[D] |
+| FR-068 | The system shall allow the patient to order a subset of items and keep the remaining items "Pending" on the prescription until it expires (BR-126). | [C]/[D] |
 | FR-069 | The system shall show each pharmacy's pickup window before ordering. | [C] |
-| FR-070 | The system shall show a "no pharmacy available" state with the option to retry later or change area (ERR-18). | [A] |
+| FR-070 | The system shall show a "no pharmacy available" state with the option to retry later or change area (ERR-18). When matching pharmacies exist but are all outside working hours or Closed, it shall show ERR-26 with the earliest opening time instead. | [A]/[D] (QR-19) |
 
 ### F-13 Pharmacy Inventory & Orders
 | ID | Requirement | Src |
@@ -709,7 +720,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | FR-072 | The system shall provide a quick daily update screen (bulk confirm of "no change"). | [A] |
 | FR-073 | The system shall timestamp every update and display "last updated". | [C] |
 | FR-074 | The system shall send new orders to the pharmacy with an Accept / Reject action and a visible countdown. | [C] |
-| FR-075 | The system shall count the 30-minute window only during the pharmacy's working hours. | [C] |
+| FR-075 | The system shall count the 30-minute window only during the pharmacy's working hours. Time while the pharmacy is toggled Closed (FR-013) does not count. | [C]/[D] (QR-19) |
 | FR-076 | The system shall auto-cancel an order not answered in time and notify the patient. | [C] |
 | FR-077 | The system shall show the pharmacy the requested items only, with no diagnosis or other medical content. | [C] |
 | FR-078 | The system shall allow the pharmacy to confirm payment (F-09) after acceptance. | [C] |
@@ -753,7 +764,8 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | FR-096 | The system shall provide catalog management and addition requests. | [C] |
 | FR-097 | The system shall provide partner subscription management. | [C] |
 | FR-098 | The system shall allow the Admin to suspend any partner or patient account, with a reason. | [A] |
-| FR-099 | The system shall **not** give the Admin access to medical content (messages, photos, diagnoses) in the MVP. | [A] Consistent with BR on privacy; needs confirmation (Q-10) |
+| FR-099 | The system shall **not** give the Admin general access to medical content (messages, photos, diagnoses). The only exception is FR-100. | [A]/[D] |
+| FR-100 | The system shall let a patient or doctor **report** a message or consultation (reason: abuse, harassment, impersonation, inappropriate content, other). The report shares only the reported messages and their attachments with Admins holding the **Report Reviewer** permission, for 14 days. Every view is audit-logged. | [D] (QR-14) — pending legal confirmation (Q-10) |
 
 ---
 
@@ -762,17 +774,17 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | ID | Category | Requirement | Src |
 |---|---|---|---|
 | NFR-001 | Platform | Responsive web app; installable PWA on Android and iOS browsers with push notifications. | [C] |
-| NFR-002 | Localization | Arabic UI, full RTL layout; medicine names in AR + EN; Arabic-Indic or Western digits, consistently. | [C]/[A] |
-| NFR-003 | Performance | The first meaningful screen loads in ≤ 3 s on a 3G connection (1.6 Mbps); page weight ≤ 1 MB excluding user images. | [A] |
+| NFR-002 | Localization | Arabic UI, full RTL layout; medicine names in AR + EN; Western digits (0–9) everywhere, matching wallet references and phone numbers. Arabic-Indic digits typed by users are accepted and normalized. | [C]/[D] (QR-18) |
+| NFR-003 | Performance | Largest Contentful Paint ≤ 3 s at the 75th percentile on a mid-range Android phone over a throttled 3G profile (1.6 Mbps down, 300 ms RTT), measured with Lighthouse; transferred page weight ≤ 1 MB excluding user images. | [A]/[D] (QR-18) |
 | NFR-004 | Resilience | Unsent messages and form data are kept locally and retried when the connection returns. | [A] |
 | NFR-005 | Offline | Pickup codes, the last-loaded prescriptions, and booking details are viewable offline. | [A] |
-| NFR-006 | Images | Photos are compressed client-side before upload (target ≤ 1 MB) while keeping diagnostic quality. | [A] |
+| NFR-006 | Images | Photos are compressed client-side before upload to ≤ 1 MB, keeping the long edge ≥ 1600 px and JPEG quality ≥ 80. | [A]/[D] (QR-18) |
 | NFR-007 | Availability | 99.5% monthly uptime for the platform (excluding the user's own connectivity). | [A] |
 | NFR-008 | Real-time | Chat messages are delivered in ≤ 2 s when both parties are online. | [A] |
 | NFR-009 | Time | All times use the Asia/Gaza timezone; SLA timers are server-side. | [A] |
 | NFR-010 | Accessibility | WCAG 2.1 AA for contrast, font scaling, and touch targets. | [A] |
 | NFR-011 | Auditability | Approvals, payment confirmations, refunds, and prescription issuance are audit-logged (who, what, when). | [A] |
-| NFR-012 | Scalability | Supports pilot scale (≥ 50 clinics, 100 pharmacies, 10,000 patients) without redesign. | [A] |
+| NFR-012 | Scalability | Supports pilot scale (≥ 50 clinics, 100 pharmacies, 10,000 patients), verified by a load test with 500 concurrent users: p95 API response < 1 s and error rate < 1%. | [A]/[D] (QR-18) |
 | NFR-013 | Tech stack | Next.js (PWA) + Supabase (PostgreSQL, Auth, Storage, Realtime). | [D] |
 | NFR-014 | Browsers | Latest 2 versions of Chrome (Android), Safari (iOS), Chrome/Edge (desktop). | [A] |
 
@@ -879,7 +891,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | Browse clinics/doctors | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Send message / book | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage family members | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Read medical content (messages, photos) | ❌ | Own family only | Own patients' consultations only | ❌ | ❌ [A] | ❌ | ❌ [A] |
+| Read medical content (messages, photos) | ❌ | Own family only | Own patients' consultations only | ❌ | ❌ [A] (✅ as Doctor if dual role, BR-008) | ❌ | ❌ [A] (reported content only, FR-100) |
 | Reply to consultations | ❌ | ✅ (own) | ✅ (own) | ❌ | ❌ | ❌ | ❌ |
 | Issue prescriptions | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | View prescription items | ❌ | Own | Own issued | ❌ | ❌ | Items of orders sent to it only | ❌ |
@@ -892,8 +904,10 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | Manage catalog | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Manage subscriptions | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Suspend accounts | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ [A] |
+| Report a message or consultation | ❌ | ✅ own | ✅ own | ❌ | ❌ | ❌ | ❌ |
+| Review reported content (FR-100) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ Report Reviewer only [D] |
 
-**Undefined permissions** (§26): whether the Clinic Manager is also a doctor (dual role); whether a pharmacy has multiple staff accounts; whether the Admin may access medical content to resolve disputes.
+**Undefined permissions** (§26): whether a pharmacy has multiple staff accounts (Q-16). Resolved in v1.1: Clinic Manager dual role (BR-008); Admin access to reported content only (FR-100).
 
 ---
 
@@ -904,24 +918,25 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | Entity | Key attributes | Notes / retention |
 |---|---|---|
 | User account | email, password hash, role(s), phone, status, 18+ confirmation | [C]/[A] |
-| Family member | account holder, name, DOB, sex, relationship | [C] |
+| Family member | account holder, name, DOB, sex, relationship, archived flag | [C]/[D] |
 | Clinic | name, address, geo-pin, phone, license doc, status, wallet IDs, subscription status | [C] |
-| Doctor | user, clinic, practice license doc, specialty certificate doc, status, service settings (async mode/price, live price/duration, in-person price) | [C] |
+| Doctor | user, clinic, practice license no. (unique), practice license doc, specialty certificate doc, status, service settings (async mode/price, live price/duration, in-person price) | [C] |
 | Clinic staff | user, clinic | [C] |
 | Pharmacy | name, address, geo-pin, phone, license docs, working hours, pickup window, wallet IDs, Closed flag, subscription status | [C]/[A] |
-| Catalog item | AR name, EN name, form, strength, active flag | [C] |
+| Catalog item | AR name, EN name, form, strength, prescription-only flag, active flag | [C]/[D] |
 | Catalog addition request | requested text, doctor, status | [C] |
 | Pharmacy stock | pharmacy, catalog item, price (ILS), in-stock, updated_at | [C] |
 | Availability slot | doctor, type (live / in-person), start, end, status | [C]/[A] |
 | Consultation | type (async / live / in-person), patient of record, doctor, status, timestamps, SLA deadline, closes_at | [C] |
 | Message | consultation, sender, text, attachments, sent_at | Medical data |
 | Attachment (photo) | file ref, consultation | Medical data; private storage |
-| Payment record | payer, payee, amount, wallet, reference no. (unique), status, confirmed_by, confirmed_at | [C] |
-| Prescription | consultation, doctor, patient of record, items (catalog or free-text, qty, dosage), status | [C] |
-| Pharmacy order | prescription, pharmacy, items, accepted price, status, accept deadline, pickup code, pickup expiry | [C] |
+| Payment record | payer, payee, amount, wallet, reference no. (unique per wallet), status, confirmed_by, confirmed_at | [C] |
+| Prescription | consultation, doctor, patient of record, items (catalog or free-text, qty, dosage, dispensed status), status, expires_at | [C]/[D] |
+| Pharmacy order | prescription, pharmacy, items, accepted price, status, accept deadline, pickup code, pickup expiry, payment-unverified flag, collector name (prescription-only items) | [C]/[D] |
 | Refund task | related booking/consultation, amount, status, marked_by | [C] |
 | Subscription | partner, plan, trial end, due date, status, payments | [C] |
 | Notification | user, event, read flag | [C] |
+| Report | reporter, consultation, reported messages, reason, status, reviewer, access expiry | [D]; medical data |
 | Audit log | actor, action, target, timestamp | [A] |
 
 **Retention policy for medical data:** not defined (Q-11).
@@ -963,8 +978,8 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | EC-17 | Staff and doctor edit the schedule at the same time. | Last write wins, with a conflict check against existing bookings (FR-045). | F-08 |
 | EC-18 | The patient enters a wrong reference. | The recipient marks Not found → the patient may correct it once (FR-051). | F-09 |
 | EC-19 | The patient pays the wrong amount. | The recipient marks Not found and states the reason. Settling the difference happens off-platform. Open question Q-08. | F-09 |
-| EC-20 | The clinic never confirms a valid payment. | The hold is released when the window ends; the patient is told to contact the clinic. Escalation to Admin: Q-03. | F-09 |
-| EC-21 | Two patients race for the same slot. | The first to *start* payment holds the slot; the other sees "slot no longer available". | F-09 |
+| EC-20 | The clinic never confirms a valid payment. | When the provider window ends, BR-078 applies (the patient's service proceeds) and the case is flagged to the Admin. | F-09 |
+| EC-21 | Two patients race for the same slot. | The first to *select* the slot holds it (FR-033) for the patient window of BR-076; the other sees "slot no longer available". | F-09 |
 | EC-22 | The prescription has only free-text items. | Saydaliyati shows the prescription with all items marked "Not available in Saydaliyati". | F-10 |
 | EC-23 | The doctor prescribes for the wrong family member. | The doctor cancels the prescription (if no order exists) and reissues. | F-10 |
 | EC-24 | The Admin deactivates a catalog item that is on open orders. | Existing orders proceed; the item disappears from new prescriptions and searches. | F-11 |
@@ -975,13 +990,22 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | EC-29 | An order arrives 10 min before closing time. | 10 min count today; the remaining 20 min count after opening the next working day. | F-13 |
 | EC-30 | The pharmacy accepts at a different price than listed. | The accepted price prevails; the patient may decline before paying. [A] | F-13 |
 | EC-31 | The pharmacy runs out after accepting and after payment. | The pharmacy must refund and cancel. Handling and penalties: Q-09. | F-13 |
-| EC-32 | The patient never pays after acceptance. | The order is released when the payment window ends (Q-03). | F-13 |
+| EC-32 | The patient never pays after acceptance. | The order is released when the 30-minute patient window ends (BR-076), and its items return to "Pending". | F-13 |
 | EC-33 | The patient loses their phone or code. | The code is retrievable after logging in on any device. | F-14 |
 | EC-34 | The pickup window expires. | Status becomes Expired; refund handling is open (Q-04). | F-14 |
 | EC-35 | Cancellation at exactly 24h before start. | Counts as ≥ 24h (refund). [A] | F-15 |
 | EC-36 | The clinic never marks a refund. | Shown to the Admin as overdue after 72h (FR-087). Enforcement: Q-08. | F-15 |
 | EC-37 | Push notifications are not permitted, or iOS without PWA install. | In-app notifications only; the UI nudges the user to install the PWA and enable push. | F-16 |
 | EC-38 | A partner is hidden while a patient is mid-booking. | The booking in progress may complete. [A] | F-17 |
+| EC-39 | The pharmacy toggles Closed during an order's 30-minute countdown. | The countdown pauses and resumes when the pharmacy reopens (FR-075). [D] | F-13 |
+| EC-40 | A patient searches at night and every matching pharmacy is closed. | ERR-26 with the earliest opening time, not ERR-18 (FR-070). [D] | F-12 |
+| EC-41 | A live session converted to async (patient no-show) gets no doctor reply within 24h. | Full refund (BR-057). [D] | F-06 |
+| EC-42 | A doctor is deactivated with open consultations. | Handled by FR-009: consultations closed, patients notified, refund tasks for unanswered paid cases. [D] | F-01 |
+| EC-43 | A prescription expires with items still Pending. | Those items show as Expired and cannot be ordered (BR-126, ERR-27). [D] | F-12 |
+| EC-44 | The patient tries to order an item that was already delivered. | Blocked (BR-127). [D] | F-12 |
+| EC-45 | A patient's reference is rejected as already used by someone else. | The patient flags "this is my payment" and the Admin reviews (BR-075). [D] | F-09 |
+| EC-46 | The account holder removes a family member who has history. | The member is archived and the history is kept (FR-017). [D] | F-03 |
+| EC-47 | The patient has used all 3 follow-up messages. | Input disabled; ERR-25 with options to book a live chat or start a new consultation (BR-048). [D] | F-05 |
 
 ---
 
@@ -1001,7 +1025,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | ERR-10 | Slot taken | "This time is no longer available" | Pick another slot |
 | ERR-11 | Live session join failure | "Connection problem — your messages will be delivered when you reconnect" | Auto-reconnect |
 | ERR-12 | Schedule conflict with existing booking | "This change affects N bookings" | Cancel bookings (clinic cancellation) or abort |
-| ERR-13 | Reference already used | "This transaction number was already used" | Re-enter |
+| ERR-13 | Reference already used | "This transaction number was already used" | Re-enter, or flag "this is my payment" (BR-075) |
 | ERR-14 | Payment marked Not found | "The clinic/pharmacy couldn't find your payment" | Correct reference once |
 | ERR-15 | Payment window expired | "Your reservation expired because payment wasn't confirmed" | Start again |
 | ERR-16 | Prescribing on an ineligible service | "Prescriptions can only follow a completed consultation on the platform" | — |
@@ -1013,6 +1037,10 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | ERR-22 | Invalid pickup code | "Code not valid for this pharmacy" | Re-enter / check order |
 | ERR-23 | Cancel after session start | "This booking can no longer be cancelled" | — |
 | ERR-24 | Push permission denied | "Turn on notifications to get doctor replies quickly" | Settings guidance |
+| ERR-25 | Follow-up limit reached | "You've used your 3 follow-up messages" | Book a live chat / start a new consultation |
+| ERR-26 | All matching pharmacies closed | "Nearby pharmacies with these medicines are closed now. The first opens at [time]" | Retry later / change area |
+| ERR-27 | Prescription expired | "This prescription has expired" | Start a new consultation |
+| ERR-28 | In-person booking blocked after no-shows | "In-person booking is paused on your account until [date]" | Use async or live chat / contact support |
 
 ---
 
@@ -1020,7 +1048,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 
 | ID | Requirement | Src |
 |---|---|---|
-| SEC-01 | Medical content (messages, photos, diagnoses, prescriptions) is accessible **only** to the patient account holder and the treating doctor of that consultation. | [C] |
+| SEC-01 | Medical content (messages, photos, diagnoses, prescriptions) is accessible **only** to the patient account holder and the treating doctor of that consultation. Exceptions: pharmacies see order items as defined in SEC-02; Report Reviewers see reported content as defined in FR-100. | [C]/[D] (QR-20) |
 | SEC-02 | Pharmacies see only the items, quantities, and patient of record name for orders sent to them, with no diagnosis or photos. | [C] |
 | SEC-03 | Clinic Staff see appointments and payments, but no medical content. | [C] |
 | SEC-04 | Authorization is enforced server-side (row-level security), not only in the UI. | [A] |
@@ -1032,6 +1060,7 @@ Each feature lists its Functional Requirements (§11), Business Rules (defined h
 | SEC-10 | Location is used only at search time and is not stored beyond the session. | [A] |
 | SEC-11 | Patients can request account deletion. Medical-record retention obligations apply (Q-11). | [A] |
 | SEC-12 | Applicable Palestinian telemedicine, e-prescription, and data-protection regulations must be confirmed before launch (RISK-3). | [A] |
+| SEC-13 | Reported-content access (FR-100) is limited to the reported messages, expires after 14 days, and every view is audit-logged. | [D] |
 
 ---
 
@@ -1082,6 +1111,7 @@ Events to instrument (no third-party sharing of medical data):
 - **AC-03:** Given a pending clinic, when an Admin rejects it without a reason, then the system blocks the action until a reason is entered.
 - **AC-04:** Given an approved clinic, when the Manager adds a new doctor, then that doctor is not visible to patients until an Admin approves the doctor's practice license and specialty certificate.
 - **AC-05:** Given a clinic registration, when no map pin is set, then submission is blocked (ERR-03).
+- **AC-05a:** Given a doctor with an unanswered paid async case, when the Clinic Manager deactivates the doctor, then the case is closed, the patient is notified, and a refund task is created.
 
 ### F-02 Pharmacy Onboarding
 - **AC-06:** Given a pharmacy registration, when working hours or wallet identifier are missing, then submission is blocked.
@@ -1101,17 +1131,21 @@ Events to instrument (no third-party sharing of medical data):
 - **AC-14:** Given a doctor with async mode Paid, when the patient submits a case, then it is not delivered to the doctor until the clinic marks the payment Received.
 - **AC-15:** Given an async case with no doctor reply, when 24h elapse, then the status becomes "Expired – No response", the patient is notified, and, if paid, a refund task is created for the clinic.
 - **AC-16:** Given the doctor's first reply at time T, when T + 72h is reached, then the thread closes and the patient cannot send further messages (ERR-09).
+- **AC-16a:** Given an open follow-up window where the patient has sent 3 follow-ups, when they try to send a 4th, then input is disabled and ERR-25 is shown; the doctor can still reply.
 - **AC-17:** Given an open async thread, when a Clinic Staff user opens the clinic dashboard, then no message text or photos are visible to them.
+- **AC-17a:** Given a paid async case with payment Received and not yet opened by the doctor, when the patient withdraws it, then the case is cancelled and a refund task is created. Once the doctor has opened it, withdrawal is unavailable.
 
 ### F-06 Live Chat
 - **AC-18:** Given a held live-chat slot, when payment is not confirmed, then the booking is not Confirmed and the slot is not shown as available to others while the hold lasts.
 - **AC-19:** Given a confirmed live session, when the patient has not joined 15 minutes after start, then the session converts to async with a 24h response deadline and no refund task is created.
+- **AC-19a:** Given a live session converted to async under BR-053, when 24h pass without a doctor reply, then a refund task is created for the clinic.
 - **AC-20:** Given a confirmed live session, when the doctor has not joined 15 minutes after start, then the patient is offered Rebook or Refund, and choosing Refund creates a refund task.
 - **AC-21:** Given a live session with a 20-minute duration, when 20 minutes elapse from start, then the live session ends and the 72h follow-up window begins.
 
 ### F-07 In-Person
 - **AC-22:** Given an available in-person slot, when the patient books it, then it is confirmed without any payment step and shows the clinic address and price payable at the clinic.
 - **AC-23:** Given an in-person visit marked No-show, when the doctor tries to create a prescription for it, then the action is blocked (ERR-16).
+- **AC-23a:** Given an account with 3 in-person no-shows in the last 90 days, when it tries to book an in-person slot, then booking is blocked and ERR-28 is shown.
 
 ### F-08 Schedule
 - **AC-24:** Given Clinic Staff of clinic X, when they edit doctor Y's schedule at clinic X, then the change is saved; given staff of clinic Z, then access is denied.
@@ -1119,9 +1153,11 @@ Events to instrument (no third-party sharing of medical data):
 
 ### F-09 Payment Verification
 - **AC-26:** Given a payment screen, when the patient submits without a reference number, then submission is blocked.
-- **AC-27:** Given reference "12345" already used on the platform, when another payment is submitted with "12345", then ERR-13 is shown.
+- **AC-27:** Given PalPay reference "12345" already used, when another PalPay payment is submitted with "12345", then ERR-13 is shown; the same reference with Jawwal Pay is accepted.
 - **AC-28:** Given a pending payment, when the recipient marks Not found, then the patient is notified and can correct the reference exactly once.
 - **AC-29:** Given a confirmed payment, when viewed in the audit log, then the confirming user and timestamp are recorded.
+- **AC-29a:** Given a submitted reference for a paid async case, when 2 hours pass without the clinic's decision, then the case is delivered to the doctor, the 24h clock starts, and the case is flagged to the Admin.
+- **AC-29b:** Given a held slot, when 30 minutes pass without a submitted reference, then the hold is released and the slot is available again.
 
 ### F-10 E-Prescription
 - **AC-30:** Given a completed platform consultation, when the doctor issues a prescription with 2 catalog items, then it appears in the patient's Saydaliyati and the patient is notified.
@@ -1138,10 +1174,14 @@ Events to instrument (no third-party sharing of medical data):
 - **AC-37:** Given each listed pharmacy, when results load, then each shows total price for available items and a "last updated" timestamp.
 - **AC-38:** Given no pharmacy with all items, when the patient chooses Split, then one sub-order per selected pharmacy is created; when they choose Subset, then unordered items remain "Pending" on the prescription.
 - **AC-39:** Given a pharmacy outside its working hours, when a patient searches, then it is not listed.
+- **AC-39a:** Given a prescription issued 31 days ago with pending items, when the patient opens it in Saydaliyati, then ordering is unavailable and ERR-27 is shown.
+- **AC-39b:** Given a prescription item already delivered, when the patient tries to order it again, then the action is blocked.
+- **AC-39c:** Given matching pharmacies that are all outside working hours, when the patient searches, then ERR-26 is shown with the earliest opening time, not ERR-18.
 
 ### F-13 Pharmacy Orders
 - **AC-40:** Given a new order at 10:00 during working hours, when the pharmacy has not responded by 10:30, then the order auto-cancels and the patient is notified (ERR-21).
 - **AC-41:** Given an order received 10 minutes before closing, when the pharmacy reopens next working day, then the remaining 20 minutes count from opening time.
+- **AC-41a:** Given an order with 20 minutes left on its countdown, when the pharmacy toggles Closed for 1 hour and then reopens, then 20 minutes remain.
 - **AC-42:** Given a sent order, when the pharmacy has not yet accepted, then the patient sees no payment option.
 - **AC-43:** Given a pharmacy viewing an order, when they open it, then they see only items, quantities, and patient of record name, with no diagnosis or photos.
 - **AC-44:** Given a pharmacy price update, when saved, then the "last updated" timestamp shown to patients reflects the save time.
@@ -1150,6 +1190,7 @@ Events to instrument (no third-party sharing of medical data):
 - **AC-45:** Given a pharmacy-confirmed payment, when confirmation is saved, then a unique pickup code (numeric + QR) is shown to the patient and remains viewable offline.
 - **AC-46:** Given a paid order not yet collected, when each day passes within the pickup window, then the patient receives one reminder per day.
 - **AC-47:** Given a pharmacy entering a code belonging to another pharmacy's order, when submitted, then ERR-22 is shown and the order isn't delivered.
+- **AC-47a:** Given an order with a Prescription-only item, when the pharmacy marks it Delivered, then the collector's name is required.
 
 ### F-15 Cancellations
 - **AC-48:** Given a paid booking starting in 30 hours, when the patient cancels, then the system shows "full refund", and on confirmation a refund task is created.
@@ -1162,6 +1203,9 @@ Events to instrument (no third-party sharing of medical data):
 ### F-17 Subscriptions
 - **AC-52:** Given a partner whose subscription is due today and unpaid, when 7 days pass without the Admin recording payment, then the partner becomes Hidden from new patients.
 - **AC-53:** Given a Hidden clinic with a confirmed booking next week, when the date arrives, then the booking proceeds normally.
+
+### F-18 Admin Console
+- **AC-53a:** Given a patient who reports a message, when a Report Reviewer opens the report, then only the reported messages are visible, the view is audit-logged, and access ends after 14 days.
 
 ---
 
@@ -1214,12 +1258,22 @@ Events to instrument (no third-party sharing of medical data):
 | QR-2 | Conflicts | Original brief: "web application" vs later "make it an app". | Resolved: Web + PWA now; native app in Phase 2. |
 | QR-3 | Conflicts | In the first (abandoned) interview round, video consultation was chosen for MVP; in the restarted round, video was deferred. | Latest answer prevails: video = Phase 2. |
 | QR-4 | Conflicts | Payment verification was first "deferred", then decided in the restart as reference number + manual confirmation. | Latest answer prevails. |
-| QR-5 | Missing rules | Payment-confirmation window length, pickup-expiry refund, pharmacy post-payment stock-out are undefined. | Listed below (Q-03, Q-04, Q-09). |
-| QR-6 | Undefined permissions | Clinic Manager dual role; pharmacy multi-user; Admin access to medical content for disputes. | Q-10, Q-15, Q-16. |
+| QR-5 | Missing rules | Payment-confirmation window length, pickup-expiry refund, pharmacy post-payment stock-out are undefined. | Q-03 resolved in v1.1 (QR-13); Q-04 and Q-09 still open. |
+| QR-6 | Undefined permissions | Clinic Manager dual role; pharmacy multi-user; Admin access to medical content for disputes. | Q-15 resolved and Q-10 proposed in v1.1 (QR-14, QR-15); Q-16 still open. |
 | QR-7 | Incomplete flows | Disputes (patient says they paid, clinic says no) have no resolution path beyond one correction. | Q-08. |
 | QR-8 | MVP consistency | All MVP features trace to confirmed answers; F-17 automated enforcement is Should Have (manual fallback). | OK |
-| QR-9 | Unnecessary complexity | Split orders across pharmacies add complexity; confirmed by owner, kept. Ratings removed. | Consider simplifying if timeline slips. |
+| QR-9 | Unnecessary complexity | Split orders across pharmacies add complexity; confirmed by owner, kept. Ratings removed. | Superseded by QR-17: split orders are now Should Have. |
 | QR-10 | Assumptions | All [A] items must be validated; key ones listed below. | — |
+| QR-11 | Conflicts (v1.1 review) | Free async with real-time delivery (BR-045) and a 72h window made paid live chat redundant. | Patient follow-ups capped at 3 (BR-048, FR-030a). [D] |
+| QR-12 | Conflicts (v1.1 review) | Live session converted to async: BR-053 (no refund) vs BR-043 (refund if unanswered). | BR-057: full refund if the doctor doesn't answer within 24h. [D] |
+| QR-13 | Missing rules (v1.1 review) | The provider controlled when the 24h SLA started; payment window undefined (Q-03). | Patient and provider windows with patient protection (BR-076, BR-078). [D] |
+| QR-14 | Undefined permissions (v1.1 review) | No one could review abuse inside medical content. | Reports and a Report Reviewer permission (FR-100, SEC-13). [D] Legal confirmation pending. |
+| QR-15 | Undefined permissions (v1.1 review) | A deactivated doctor's patients were left without a path; Clinic Manager dual role undefined. | FR-009 and BR-008. [D] |
+| QR-16 | Missing rules (v1.1 review) | Prescriptions reusable without limit; prescription-only medicines collectable by anyone. | BR-126 – BR-128. [D] Legal confirmation pending. |
+| QR-17 | MVP size (v1.1 review) | 17 of 18 features were Must Have. | F-06 live chat and FR-067 split orders moved to Should Have and built last (§27). [D] |
+| QR-18 | Unverifiable requirements (v1.1 review) | NFR-002, NFR-003, NFR-006, NFR-012, and BR-130 could not be tested. | Rewritten with measurable thresholds. [D] |
+| QR-19 | Missing edge cases (v1.1 review) | Closed toggle during countdown, night search, in-person no-shows, reference collisions, async withdrawal, family member removal, partial acceptance. | FR-075, FR-070, BR-063, BR-075, BR-049, FR-017, BR-133; EC-39 – EC-47; ERR-25 – ERR-28. [D] |
+| QR-20 | Internal inconsistencies (v1.1 review) | EC-02 relied on a license number not defined anywhere; SEC-01 vs SEC-02; EC-21 vs FR-033 on when a slot hold starts. | Aligned in FR-002, BR-006, SEC-01, EC-21. [D] |
 
 ### 26.2 Unresolved questions
 
@@ -1227,28 +1281,30 @@ Events to instrument (no third-party sharing of medical data):
 |---|---|---|---|
 | Q-01 | Final product name (current working name: التِئام / Iltiam). | Product owner | Branding |
 | Q-02 | Exact subscription start: when does the free trial begin (approval date?) | Product owner | F-17 |
-| Q-03 | Payment-confirmation window: how long does a slot/order stay held awaiting the provider's confirmation, and is there escalation if the provider never responds? | Product owner | F-06, F-09, F-13 |
+| Q-03 | Payment-confirmation window: how long does a slot/order stay held awaiting the provider's confirmation, and is there escalation if the provider never responds? **Resolved in v1.1** by BR-076 and BR-078 [D]. | Product owner | — |
 | Q-04 | When a paid pharmacy order expires uncollected, is the patient refunded (fully/partially) or not? | Product owner | F-14 |
 | Q-05 | Free-trial length. | Product owner | F-17 |
 | Q-06 | Subscription prices (same for clinics and pharmacies? per doctor?). | Product owner | F-17 |
 | Q-07 | Can a doctor offer booked live chat for free, or is it always paid? | Product owner | F-06 |
 | Q-08 | Dispute and refund enforcement: what happens if a clinic/pharmacy doesn't refund or a payment is disputed? Admin role? | Product owner | F-09, F-15 |
 | Q-09 | Pharmacy discovers stock-out after payment: policy and consequences? | Product owner | F-13 |
-| Q-10 | Can Admins access medical content (e.g., for abuse reports or disputes)? | Product owner / Legal | SEC |
+| Q-10 | Can Admins access medical content (e.g., for abuse reports or disputes)? **Proposed in v1.1:** reported content only (FR-100) [D]; legal confirmation pending. | Legal | SEC |
 | Q-11 | Medical-record retention period and deletion rules. | Legal | SEC-11 |
 | Q-12 | Booking reminder timing (e.g., 24h and 1h before). | Product owner | F-16 |
 | Q-13 | 3-month success targets (clinics, pharmacies, patients, conversions). | Product owner | §22 |
 | Q-14 | Regulatory requirements for telemedicine, e-prescriptions, and prescription-only medicines in Gaza. | Legal | Launch |
-| Q-15 | Can a Clinic Manager also be a doctor in the same account? | Product owner | F-01 |
+| Q-15 | Can a Clinic Manager also be a doctor in the same account? **Resolved in v1.1:** yes (BR-008) [D]. | Product owner | — |
 | Q-16 | Do pharmacies need multiple staff logins? | Product owner | F-02 |
 | Q-17 | Ratings & reviews: confirm deferral to Phase 2 (owner was undecided). | Product owner | §24 |
 | Q-18 | Minimum booking notice (how soon before a slot can it be booked?). | Product owner | F-08 |
-| Q-19 | Can the same prescription be ordered more than once (refills)? Prescription validity period? | Product owner / Legal | F-10, F-12 |
+| Q-19 | Can the same prescription be ordered more than once (refills)? Prescription validity period? **Proposed in v1.1:** no refills, 30-day validity (BR-126, BR-127) [D]; legal confirmation pending. | Legal | F-10, F-12 |
 | Q-20 | Who compiles the initial dermatology catalog and areas list? | Product owner | Launch |
 
 ### 26.3 Key assumptions to validate
 
 Highest impact first: BR-024 (email verification), BR-025 (phone collected), BR-047 (photo limits), BR-056 (live chat always paid), BR-134 (48h outdated flag), BR-077 (ILS currency), FR-051 (one correction), FR-087 (72h refund overdue), FR-099 (Admin no medical access), NFR-003 (performance budget), NFR-013 (tech stack).
+
+v1.1 delegated rules to validate in the pilot: BR-048 (3 follow-ups), BR-063 (no-show block), BR-076 (30 min / 2 h / 60 min windows), BR-126 (30-day validity), FR-100 (14-day report access).
 
 ---
 
@@ -1256,11 +1312,11 @@ Highest impact first: BR-024 (email verification), BR-025 (phone collected), BR-
 
 | Phase | Name | Scope | Exit criteria |
 |---|---|---|---|
-| 0 | Foundations & validation | Resolve Q-03, Q-04, Q-05/06, Q-14; compile catalog & areas list; confirm wallet process with 2–3 pilot partners | Legal go-ahead; catalog v1 ready |
+| 0 | Foundations & validation | Resolve Q-04, Q-05/06, Q-14 (Q-03 resolved in v1.1); legal confirmation of BR-126, BR-128, and FR-100; compile catalog & areas list; confirm wallet process with 2–3 pilot partners | Legal go-ahead; catalog v1 ready |
 | 1 | Partner onboarding | F-01, F-02, F-11, F-18 (verification + catalog), Arabic RTL PWA shell | Pilot clinics/pharmacies approved and configured |
-| 2 | Consultations | F-03, F-04, F-05, F-06, F-07, F-08, F-09 (clinic side), F-16 | Patients complete async, live, and in-person flows end-to-end |
+| 2 | Consultations | F-03, F-04, F-05, F-07, F-08, F-09 (clinic side), F-16 | Patients complete async and in-person flows end-to-end |
 | 3 | Prescription → Saydaliyati | F-10, F-12, F-13, F-09 (pharmacy side), F-14 | Full journey UF-1 passes in pilot |
-| 4 | Policies & business model | F-15, F-17, analytics (§21) | Refund & subscription flows live; KPIs reporting |
+| 4 | Policies, business model & Should Have features | F-15, F-17, analytics (§21); then, if time allows, F-06 live chat and FR-067 split orders (QR-17) | Refund & subscription flows live; KPIs reporting |
 | 5 | Closed pilot | Limited clinics/pharmacies/patients in Gaza; fix based on feedback | KPIs measured against targets (Q-13) |
 | 6 | Phase 2 features | §24 Phase 2 items | — |
 
