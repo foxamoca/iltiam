@@ -1,0 +1,268 @@
+@startuml use-case
+' Iltiam (التِئام) — MVP Use Case Diagram
+' Sources: docs/PRD.md v1.1, docs/user-flow.md
+' Explanation (Arabic): docs/diagrams/use-case.md
+'
+' Conventions
+'   solid line   : association confirmed by the PRD ([C])
+'   dashed line  : association based on an assumption [A] or a delegated rule [D]
+'   <<include>>  : behaviour that ALWAYS runs as part of the base use case
+'   <<extend>>   : behaviour that runs ONLY when its stated condition holds
+'   (Should Have): first to cut if the timeline slips (PRD QR-17)
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #1d4ed8
+}
+skinparam note {
+  BackgroundColor #fef9c3
+  BorderColor #a16207
+}
+
+' ---------------- Actors: care side ----------------
+actor "Guest" as Guest
+actor "Patient\n(account holder, 18+)" as Patient
+actor "Registered User" as RegUser <<abstract>>
+
+' ---------------- Actors: provider / operator side ----------------
+actor "Doctor\n(dermatologist)" as Doctor
+actor "Clinic Staff" as Staff
+actor "Clinic Team Member" as ClinicTeam <<abstract>>
+actor "Clinic Manager" as Manager
+actor "Pharmacy" as Pharmacy
+actor "Platform Admin" as Admin
+actor "Super Admin" as SuperAdmin
+actor "Report Reviewer" as Reviewer
+actor "Time\n(scheduler)" as Clock <<system>>
+
+' ---------------- Actor generalizations ----------------
+Patient --|> RegUser
+Doctor --|> RegUser
+Staff --|> RegUser
+Manager --|> RegUser
+Pharmacy --|> RegUser
+Admin --|> RegUser
+Doctor --|> ClinicTeam
+Staff --|> ClinicTeam
+Manager --|> ClinicTeam
+Reviewer --|> Admin
+SuperAdmin --|> Admin
+
+rectangle "Iltiam Platform (MVP)" {
+
+  package "Accounts & Discovery" {
+    usecase "Browse clinics and doctors\n(services, prices, slots, filters)" as UC01
+    usecase "Register patient account" as UC02
+    usecase "Log in / reset password" as UC03
+    usecase "Manage family members" as UC04
+    usecase "View notifications" as UC05
+  }
+
+  package "Consultations & Bookings" {
+    usecase "Select patient of record" as UC10
+    usecase UC11 as "Send async consultation
+--
+extension points:
+paid async mode"
+    usecase "Exchange consultation messages\n(patient: max 3 follow-ups)" as UC12
+    usecase "Withdraw paid async case" as UC13
+    usecase "Book live chat session\n(Should Have)" as UC14
+    usecase UC15 as "Join live chat session
+(Should Have)
+--
+extension points:
+doctor absent 15 min"
+    usecase "Rebook or request refund" as UC16
+    usecase "Book in-person visit" as UC17
+    usecase "Cancel booking (patient)" as UC18
+    usecase "Report message or consultation" as UC19
+  }
+
+  package "Clinic Operations" {
+    usecase "Register clinic\n(documents, resubmit)" as UC20
+    usecase "Manage clinic team\n(invite / deactivate doctors and staff)" as UC21
+    usecase "Configure own services and prices\n(async mode, live chat, in-person)" as UC22
+    usecase "Manage schedule\n(live chat / in-person slots)" as UC23
+    usecase "Mark visit Completed or No-show" as UC24
+    usecase "Cancel booking (clinic)" as UC25
+    usecase "Mark refund as Refunded" as UC26
+  }
+
+  package "Payments" {
+    usecase UC30 as "Submit payment reference
+--
+extension points:
+reference already used"
+    usecase "Flag reference conflict" as UC31
+    usecase "Confirm payment\n(Received / Not found)" as UC32
+  }
+
+  package "Prescribing" {
+    usecase UC40 as "Issue e-prescription
+--
+extension points:
+medicine not in catalog"
+    usecase "Add free-text item and\nrequest catalog addition" as UC41
+    usecase "Cancel prescription" as UC42
+  }
+
+  package "Saydaliyati" {
+    usecase "View prescriptions and history\n(per family member)" as UC50
+    usecase "Find pharmacies for prescription\n(GPS or area)" as UC51
+    usecase UC52 as "Place pharmacy order
+(all or subset of items)
+--
+extension points:
+no single pharmacy has all items"
+    usecase "Split order across pharmacies\n(Should Have)" as UC53
+    usecase "Pay accepted order" as UC54
+    usecase "View pickup code (offline)" as UC55
+  }
+
+  package "Pharmacy Operations" {
+    usecase "Register pharmacy\n(documents, resubmit)" as UC60
+    usecase "Manage pharmacy settings\n(hours, pickup window, wallets, Closed)" as UC61
+    usecase "Update prices and stock" as UC62
+    usecase "Accept or reject order" as UC63
+    usecase UC64 as "Hand over order with pickup code
+--
+extension points:
+prescription-only item"
+    usecase "Record collector name" as UC65
+    usecase "Cancel paid order\n(out of stock after payment)" as UC66
+    usecase "Mark order refund as Refunded\n(out of stock / pickup expired)" as UC67
+  }
+
+  package "Administration" {
+    usecase "Review partner applications\n(clinics, doctors, pharmacies)" as UC70
+    usecase "Manage medicine catalog\nand addition requests" as UC71
+    usecase "Manage partner subscriptions" as UC72
+    usecase "Suspend account / lift no-show block" as UC73
+    usecase "Review payment conflicts,\noverdue refunds and unverified payments\n(remind, then hide or suspend)" as UC74
+    usecase "Review reported content" as UC75
+    usecase "Grant / revoke\nReport Reviewer permission" as UC76
+  }
+
+  package "Time-based Rules" {
+    usecase "Enforce consultation and\nbooking deadlines" as UC80
+    usecase "Enforce payment and\norder windows" as UC81
+    usecase "Update subscription status\n(Trial / Active / Grace / Hidden)" as UC82
+    usecase "Send reminders\n(booking: 24 h and 1 h before)" as UC83
+  }
+}
+
+' ---------------- Guest ----------------
+Guest -- UC01
+Guest -- UC02
+
+' ---------------- Any registered user ----------------
+RegUser -- UC03
+RegUser -- UC05
+
+' ---------------- Patient ----------------
+Patient -- UC01
+Patient -- UC04
+Patient -- UC11
+Patient -- UC12
+Patient .. UC13
+Patient -- UC14
+Patient -- UC15
+Patient -- UC17
+Patient -- UC18
+Patient .. UC19
+Patient -- UC30
+Patient -- UC50
+Patient -- UC51
+Patient -- UC52
+Patient -- UC54
+Patient -- UC55
+
+' ---------------- Doctor ----------------
+Doctor -- UC12
+Doctor -- UC15
+Doctor .. UC19
+Doctor -- UC22
+Doctor -- UC40
+Doctor .. UC42
+
+' ---------------- Clinic team (Doctor + Staff + Manager) ----------------
+ClinicTeam -- UC23
+ClinicTeam -- UC32
+ClinicTeam -- UC26
+ClinicTeam -- UC24
+ClinicTeam -- UC25
+
+' ---------------- Clinic Manager ----------------
+Manager -- UC20
+Manager -- UC21
+
+' ---------------- Pharmacy ----------------
+Pharmacy -- UC60
+Pharmacy -- UC61
+Pharmacy -- UC62
+Pharmacy -- UC63
+Pharmacy -- UC32
+Pharmacy -- UC64
+Pharmacy -- UC66
+Pharmacy -- UC67
+
+' ---------------- Admin ----------------
+Admin -- UC70
+Admin -- UC71
+Admin -- UC72
+Admin .. UC73
+Admin -- UC74
+Reviewer .. UC75
+SuperAdmin -- UC76
+
+' ---------------- Time ----------------
+Clock -- UC80
+Clock -- UC81
+Clock -- UC82
+Clock -- UC83
+
+' ---------------- <<include>>: always executed ----------------
+UC11 ..> UC10 : <<include>>
+UC14 ..> UC10 : <<include>>
+UC17 ..> UC10 : <<include>>
+UC14 ..> UC30 : <<include>>
+UC54 ..> UC30 : <<include>>
+
+' ---------------- <<extend>>: conditional ----------------
+UC30 ..> UC11 : <<extend>>\n[doctor's async mode = Paid]
+UC16 ..> UC15 : <<extend>>\n[doctor not joined after 15 min]
+UC31 ..> UC30 : <<extend>>\n[reference already used\nwith same wallet]
+UC41 ..> UC40 : <<extend>>\n[medicine not in catalog]
+UC53 ..> UC52 : <<extend>>\n[no single pharmacy has all\nitems and patient splits]
+UC65 ..> UC64 : <<extend>>\n[order has a\nprescription-only item]
+
+' ---------------- Notes ----------------
+note right of Manager
+  Same clinic-team rights as Staff.
+  May also hold the Doctor role
+  on the same account (BR-008).
+  Medical content only through
+  the Doctor role.
+end note
+
+note right of Pharmacy
+  One login per pharmacy
+  in the MVP (Q-16).
+end note
+
+note bottom of Staff
+  Never sees medical content
+  (FR-031, SEC-03).
+end note
+
+note right of Reviewer
+  Admin with the Report Reviewer
+  permission: reported messages only,
+  14 days, audit-logged (FR-100).
+  Pending legal confirmation (Q-10).
+end note
+
+@enduml
