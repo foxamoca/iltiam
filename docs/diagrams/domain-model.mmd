@@ -1,0 +1,145 @@
+%% Iltiam — Conceptual Domain Model (source: docs/PRD.md v1.1, docs/user-flow.md)
+%% Solid arrow  = relationship confirmed by the product owner [C]
+%% Dashed arrow = relationship from an assumption [A] or delegated decision [D]
+flowchart LR
+
+  subgraph PEOPLE["Patients & Care Recipients"]
+    Holder["Account Holder (adult, 18+)<br/>registers, requests care, pays, orders medicine"]
+    Family["Family Member<br/>dependent cared for under the holder"]
+    POR["Patient of Record<br/>the person a service, prescription or order is for"]
+  end
+
+  subgraph PARTNERS["Partner Network & Verification"]
+    ClinicMgr["Clinic Manager<br/>registers the clinic, builds its team"]
+    Clinic["Clinic<br/>licensed, physical dermatology location"]
+    Doctor["Dermatologist<br/>treats, prescribes, sets own service terms"]
+    Staff["Clinic Staff<br/>schedule and payment checks only"]
+    Pharmacy["Pharmacy<br/>publishes stock, accepts orders, hands over"]
+    Verification["Verification Application<br/>license documents; Pending, Approved or Rejected"]
+    Wallet["Wallet Payment Identifier<br/>PalPay, Jawwal Pay, Bank of Palestine"]
+    Hours["Working Hours & Closed Status<br/>when a pharmacy is reachable"]
+  end
+
+  subgraph CARE["Care Delivery"]
+    Offer["Service Offering<br/>per doctor: async mode, live-chat and in-person price"]
+    Slot["Availability Slot<br/>live-chat or in-person time"]
+    Service["Care Service<br/>any service performed through the platform"]
+    Async["Async Consultation<br/>case + photos; 24h first reply; 72h follow-up"]
+    Live["Live Chat Session<br/>free or prepaid (doctor's choice), fixed duration"]
+    Visit["In-Person Appointment<br/>paid at the clinic; Completed or No-show"]
+    Content["Medical Content<br/>messages and photos"]
+  end
+
+  subgraph RX["Prescribing & Medicine Catalog"]
+    Rx["E-Prescription<br/>issued after a care service; not editable"]
+    RxItem["Prescription Item<br/>catalog medicine, quantity, dosage"]
+    FreeText["Free-text Item<br/>not orderable in Saydaliyati"]
+    Catalog["Catalog Medicine<br/>dermatology only; Arabic + English name"]
+    AddReq["Catalog Addition Request"]
+  end
+
+  subgraph SAYD["Saydaliyati — Medicine Fulfilment"]
+    Location["Patient Location<br/>GPS, or a chosen area as fallback"]
+    Area["Area<br/>predefined list of Gaza areas"]
+    Stock["Pharmacy Stock Listing<br/>price + availability per medicine; last updated"]
+    Order["Pharmacy Order<br/>accepted or rejected before payment"]
+    Pickup["Pickup Code<br/>numeric + QR; anyone holding it may collect"]
+  end
+
+  subgraph MONEY["Payment Verification & Refunds"]
+    PayClaim["Payment Claim<br/>wallet + transaction reference; Received or Not found"]
+    Refund["Refund Task<br/>clinic or pharmacy refunds directly, marks Refunded"]
+  end
+
+  subgraph OPS["Platform Operations"]
+    Admin["Platform Admin<br/>verifies partners, curates catalog, tracks subscriptions"]
+    Sub["Partner Subscription<br/>Trial, Active, Grace, Hidden"]
+    Report["Content Report<br/>abuse report on a message or consultation"]
+    ReviewTask["Admin Review Task<br/>reference conflicts, unverified payments, refused refunds"]
+  end
+
+  %% Patients
+  Holder -->|"manages"| Family
+  Holder -->|"can be"| POR
+  Family -->|"can be"| POR
+
+  %% Partner network
+  ClinicMgr -->|"registers and manages"| Clinic
+  ClinicMgr -->|"invites"| Doctor
+  ClinicMgr -->|"invites"| Staff
+  ClinicMgr -.->|"may also act as"| Doctor
+  Doctor -->|"belongs to exactly one"| Clinic
+  Staff -->|"works for"| Clinic
+  Clinic -->|"submits"| Verification
+  Doctor -->|"submits licenses in"| Verification
+  Pharmacy -->|"submits"| Verification
+  Admin -->|"approves or rejects"| Verification
+  Clinic -->|"receives patient payments at"| Wallet
+  Pharmacy -.->|"receives patient payments at"| Wallet
+  Pharmacy -.->|"operates within"| Hours
+
+  %% Care delivery
+  Doctor -->|"defines"| Offer
+  Offer -->|"sets terms and price of"| Service
+  Doctor -->|"publishes"| Slot
+  Staff -->|"manages"| Slot
+  Holder -->|"requests or books"| Service
+  Service -->|"is for exactly one"| POR
+  Doctor -->|"performs"| Service
+  Async -->|"is a kind of"| Service
+  Live -->|"is a kind of"| Service
+  Visit -->|"is a kind of"| Service
+  Live -->|"is booked into"| Slot
+  Visit -->|"is booked into"| Slot
+  Live -->|"becomes, if patient misses start"| Async
+  Async -->|"carries"| Content
+  Live -->|"carries"| Content
+  Staff -->|"has no access to"| Content
+
+  %% Prescribing
+  Service -->|"may lead to"| Rx
+  Doctor -->|"issues"| Rx
+  Rx -->|"is for exactly one"| POR
+  Rx -->|"lists"| RxItem
+  Rx -->|"may list"| FreeText
+  RxItem -->|"refers to"| Catalog
+  FreeText -->|"triggers"| AddReq
+  Admin -->|"curates"| Catalog
+  Admin -->|"approves or rejects"| AddReq
+
+  %% Saydaliyati
+  Pharmacy -->|"publishes"| Stock
+  Stock -->|"prices and stocks"| Catalog
+  Location -->|"ranks by distance"| Pharmacy
+  Location -->|"falls back to a chosen"| Area
+  Pharmacy -->|"has a map pin and is assigned to an"| Area
+  Holder -->|"places"| Order
+  Order -->|"draws from exactly one"| Rx
+  Order -->|"fulfils items of"| RxItem
+  Order -->|"is addressed to"| Pharmacy
+  Order -->|"yields, once paid"| Pickup
+  Pharmacy -->|"checks code and marks Delivered"| Pickup
+
+  %% Money
+  Holder -->|"submits"| PayClaim
+  PayClaim -->|"pays for"| Service
+  PayClaim -->|"pays for"| Order
+  PayClaim -->|"is paid to"| Wallet
+  Clinic -->|"verifies, via doctor or staff"| PayClaim
+  Pharmacy -->|"verifies"| PayClaim
+  Service -->|"may create"| Refund
+  Clinic -->|"settles"| Refund
+  Order -->|"may create"| Refund
+  Pharmacy -->|"settles"| Refund
+  PayClaim -.->|"conflict or no decision flagged to"| ReviewTask
+  Refund -->|"overdue or refused, escalated to"| ReviewTask
+  Admin -->|"follows up; may suspend the partner"| ReviewTask
+
+  %% Operations
+  Clinic -->|"holds"| Sub
+  Pharmacy -->|"holds"| Sub
+  Admin -->|"records payments for"| Sub
+  Holder -->|"files"| Report
+  Doctor -->|"files"| Report
+  Admin -->|"reviews, only with Report Reviewer permission"| Report
+  Report -.->|"exposes only the reported"| Content
